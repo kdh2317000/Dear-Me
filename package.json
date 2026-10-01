@@ -1,0 +1,21 @@
+{
+  "name": "read-us",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cross-env NODE_ENV=production node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}

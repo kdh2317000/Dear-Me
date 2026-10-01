@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <title>Dear Me - 익명 게시판</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* [핵심 수정] 2. 전체 레이아웃: 높이 동기화를 위해 stretch 적용 */
+        .main-wrapper {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 50px auto !important;
+            padding: 0 20px;
+            align-items: stretch; /* 왼쪽과 오른쪽 박스 길이를 같게 맞춤 */
+        }
+
+        /* 3. 공통 박스 스타일 */
+        .content-box {
+            background: white;
+            border-radius: 30px;
+            border: 3px solid #5c67f2;
+            padding: 40px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 4. 게시판 헤더 및 검색창 */
+        .board-header h2 { font-size: 2.2rem; color: #333; margin-bottom: 20px; font-weight: bold; text-align: left; }
+        
+        .search-area {
+            background: #f8f9ff;
+            padding: 15px 20px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #eef0ff;
+        }
+        .search-select { padding: 8px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        .search-input { padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; width: 220px; outline: none; }
+        .btn-search { padding: 8px 20px; background: #333; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* 5. 테이블 스타일 */
+        .board-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .board-table th {
+            border-top: 2px solid #5c67f2;
+            border-bottom: 1px solid #eee;
+            padding: 15px 5px;
+            background: #fafbff;
+            color: #555;
+            font-weight: bold;
+        }
+        .board-table td { padding: 18px 5px; border-bottom: 1px solid #f0f0f0; text-align: center; color: #666; font-size: 0.95rem; }
+        
+        .td-title { text-align: left !important; padding-left: 20px !important; color: #333 !important; cursor: pointer; }
+        .td-title:hover { text-decoration: underline; color: #5c67f2 !important; }
+        .reply-count { color: #5c67f2; font-size: 0.85rem; font-weight: bold; margin-left: 5px; }
+        .notice-badge { background: #ff5252; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; }
+
+        /* 6. 사이드바 - 실시간 인기글 */
+        .sidebar { display: flex; flex-direction: column; }
+        .side-title { 
+            font-size: 1.2rem; font-weight: bold; padding-bottom: 12px; 
+            border-bottom: 2px solid #5c67f2; margin-bottom: 15px; text-align: left;
+        }
+        .popular-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+        .popular-item {
+            display: flex; gap: 12px; padding: 18px 0; border-bottom: 1px solid #f5f5f5;
+            align-items: center; cursor: pointer; transition: 0.2s;
+        }
+        .popular-item:hover { background-color: #fcfcff; }
+        .pop-num { color: #5c67f2; font-weight: 900; font-size: 1.1rem; width: 20px; }
+        .pop-text { font-size: 1.05rem; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+
+        /* 7. 글쓰기 버튼 */
+        .btn-write {
+            background: #5c67f2; color: white; border: none; padding: 12px 30px;
+            border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: auto; align-self: flex-end;
+            transition: 0.3s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-write:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(92, 103, 242, 0.3); }
+
+        .btn-logout { color: #333 !important; font-weight: 800; cursor: pointer; }
+
+        @media (max-width: 900px) { .main-wrapper { grid-template-columns: 1fr; } }
+        
+    </style>
+    <script src="/mobile-nav.js" defer></script>
+</head>
+<body>
+
+<script>
+// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+(function(){
+    var h = new Date().getHours();
+    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
+    document.body.classList.add(c);
+})();
+</script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo" onclick="location.href='/'" style="cursor:pointer;">Dear Me</h1>
+            <ul class="nav-menu">
+                <li><a href="/">메인</a></li>
+                <li><a href="/recommend">명언추천</a></li>
+                <li><a href="/library">명언 보관함</a></li>
+                <li><a href="/pet-collection">짱구 도감 🐾</a></li>
+                <li><a href="/mypage">마이페이지</a></li>
+                
+                <li class="nav-dropdown">
+                    <a href="/board" style="color: #5c67f2; font-weight: bold;">익명 게시판 <i class="fa-solid fa-caret-down"></i></a>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/board" style="color: #5c67f2; font-weight: bold;">익명 게시판</a></li>
+                        <li><a href="/postbox">위로 우체통 <span id="postboxBadge" style="display:none; background:#ff5252; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; margin-left:5px;">N</span></a></li>
+                    </ul>
+                </li>
+                <li><a href="javascript:void(0)" onclick="handleLogout()" class="btn-logout">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+    <div class="main-wrapper">
+        <div class="content-box">
+            <div class="board-header">
+                <h2>익명 게시판</h2>
+            </div>
+
+            <div class="search-area">
+                <select id="searchType" class="search-select">
+                    <option value="통합검색">통합검색</option>
+                    <option value="제목">제목</option>
+                    <option value="내용">내용</option>
+                </select>
+                <input type="text" id="searchInput" class="search-input" placeholder="검색어를 입력하세요" onkeypress="if(event.keyCode==13) loadData()">
+                <button class="btn-search" onclick="loadData()">검색</button>
+            </div>
+
+            <table class="board-table">
+                <thead>
+                    <tr>
+                        <th width="10%">번호</th>
+                        <th width="50%">제목</th>
+                        <th width="25%">등록일</th>
+                        <th width="15%">조회수</th>
+                    </tr>
+                </thead>
+                <tbody id="postTableBody">
+                    </tbody>
+            </table>
+
+            <button class="btn-write" onclick="location.href='/board/write'">
+                <i class="fa-solid fa-pen-to-square"></i> 새 글 쓰기
+            </button>
+        </div>
+
+        <div class="sidebar">
+            <div class="content-box" style="height: 100%; padding: 35px;">
+                <div class="side-title">🔥 오늘의 인기글</div>
+                <ul class="popular-list" id="popularList">
+                    <li class="popular-item" style="color:#999; font-size:0.9rem;">인기글 로딩 중...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginUser = sessionStorage.getItem('loginUser');
+        
+        window.onload = function() {
+            if(!loginUser) {
+                alert("로그인이 필요합니다.");
+                location.href = "/login";
+                return;
+            }
+            loadData();
+            // 1초마다 실시간 갱신 (리스트와 인기글 각각 업데이트)
+            setInterval(loadData, 1000);
+            checkUnreadReplies();
+            setInterval(checkUnreadReplies, 5000);
+        };
+
+        async function checkUnreadReplies() {
+            try {
+                const res = await fetch('/api/postbox/unread?username=' + encodeURIComponent(loginUser));
+                const data = await res.json();
+                const badge = document.getElementById('postboxBadge');
+                if(data && data.count > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.innerText = data.count;
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch(e) {}
+        }
+
+        // 데이터를 로드하고 화면을 구성하는 메인 함수
+        async function loadData() {
+            const searchType = document.getElementById('searchType').value;
+            const keyword = document.getElementById('searchInput').value;
+
+            try {
+                // [분리 포인트 1] 게시판 리스트용 데이터 (검색 조건 포함)
+                const res = await fetch(`/api/board/posts?type=${encodeURIComponent(searchType)}&keyword=${encodeURIComponent(keyword)}`);
+                const posts = await res.json();
+                
+                // [분리 포인트 2] 인기글용 데이터 (항상 전체 목록을 가져옴)
+                const popRes = await fetch(`/api/board/posts`);
+                const allPosts = await popRes.json();
+                
+                renderBoard(posts, allPosts); // 게시판 그리기
+                renderPopular(allPosts);      // 인기글 그리기 (전체 데이터 사용)
+
+            } catch (err) { 
+                console.error("데이터 실시간 연동 오류:", err); 
+            }
+        }
+
+        // 왼쪽 게시판 목록 렌더링 함수
+        function renderBoard(posts, allPosts) {
+            const tableBody = document.getElementById('postTableBody');
+            
+            // 테이블 빈 상태로 초기화
+            tableBody.innerHTML = '';
+
+            // 공지사항 게시글 추출
+            const noticePosts = posts.filter(p => !p.parent_id && p.is_notice);
+            
+            // 일반 게시글 추출
+            const mainPosts = posts.filter(p => {
+                const isDuplicateId = [26, 27, 28, 29, 30].includes(p.id);
+                return !p.parent_id && !p.is_notice && !isDuplicateId;
+            });
+
+            // 공지사항 렌더링 (최상단 고정)
+            noticePosts.forEach((p) => {
+                const replyCount = p.comment_count || 0;
+                const dateStr = new Date(p.created_at).toISOString().split('T')[0];
+                const displayTitle = p.title || "제목 없음";
+
+                const row = document.createElement('tr');
+                row.style.background = '#fffafa';
+                row.innerHTML = `
+                    <td>📢</td>
+                    <td class="td-title" onclick="location.href='/board/view/${p.id}'">
+                        <span class="notice-badge">공지</span> ${displayTitle}
+                        <span class="reply-count">💬 ${replyCount}</span>
+                    </td>
+                    <td>${dateStr}</td>
+                    <td>${(p.views || 0).toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            if(mainPosts.length === 0 && document.getElementById('searchInput').value !== "") {
+                tableBody.innerHTML += '<tr><td colspan="4" style="padding:40px;">검색 결과가 없습니다.</td></tr>';
+            }
+
+            mainPosts.forEach((p) => {
+                // 댓글 개수는 백엔드에서 서브쿼리로 가져온 comment_count 속성을 바로 사용
+                const replyCount = p.comment_count || 0;
+                const dateStr = new Date(p.created_at).toISOString().split('T')[0];
+                const displayTitle = p.title || "제목 없음";
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.id}</td>
+                    <td class="td-title" onclick="location.href='/board/view/${p.id}'">
+                        ${p.is_hidden ? '🔒 숨겨진 게시글입니다.' : displayTitle}
+                        <span class="reply-count">💬 ${replyCount}</span>
+                    </td>
+                    <td>${dateStr}</td>
+                    <td>${(p.views || 0).toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // 오른쪽 인기글 목록 렌더링 함수 (검색어와 상관없이 항상 전체 데이터 기준)
+        function renderPopular(allPosts) {
+            const popularList = document.getElementById('popularList');
+            
+            const popularPosts = allPosts
+                .filter(p => {
+                    const isDuplicateId = [26, 27, 28, 29, 30].includes(p.id);
+                    return !p.parent_id && !p.is_notice && !isDuplicateId;
+                }) 
+                .sort((a, b) => (b.views || 0) - (a.views || 0))
+                .slice(0, 5);
+
+            popularList.innerHTML = ''; 
+
+            popularPosts.forEach((p, index) => {
+                const li = document.createElement('li');
+                li.className = 'popular-item';
+                li.onclick = () => location.href = `/board/view/${p.id}`;
+                li.innerHTML = `
+                    <span class="pop-num">${index + 1}</span>
+                    <span class="pop-text">${p.title || '제목 없음'}</span>
+                `;
+                popularList.appendChild(li);
+            });
+        }
+
+        function handleLogout() {
+            if(confirm("정말 로그아웃 하시겠습니까?")) {
+                sessionStorage.removeItem('loginUser');
+                location.href = "/login";
+            }
+        }
+    </script>
+
+
+<!-- Global Auth Security & Heartbeat (Injected) -->
+<script>
+(function() {
+    const u = sessionStorage.getItem('loginUser');
+    if (u) {
+        // 즉시 세션 유효성 검사 (서버 재실행 등 감지)
+        fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) {
+                sessionStorage.removeItem('loginUser');
+                alert("세션이 만료되었거나 서버가 재시작되었습니다. 다시 로그인해주세요.");
+                location.href = "/login";
+            }
+        }).catch(()=>{});
+
+        // 20초마다 생존 신고
+        setInterval(() => {
+            fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success) {
+                    sessionStorage.removeItem('loginUser');
+                    alert("세션이 만료되었습니다.");
+                    location.href = "/login";
+                }
+            }).catch(()=>{});
+        }, 3000);
+    }
+    window.logout = function() {
+        if (confirm("로그아웃 하시겠습니까?")) {
+            const currentUser = sessionStorage.getItem('loginUser');
+            if (currentUser) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser})
+                }).then(() => {
+                    sessionStorage.removeItem('loginUser');
+                    alert("정상적으로 로그아웃 되었습니다.");
+                    location.href = "/";
+                }).catch(() => {
+                    sessionStorage.removeItem('loginUser');
+                    location.href = "/";
+                });
+            } else {
+                location.href = "/";
+            }
+        }
+    };
+})();
+</script>
+
+
+
+
+
+
+
+
+
+<!-- 시간대별 고급 파티클 테마 및 글로우 효과 -->
+<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+<script>
+(function() {
+    function applyBodyTheme(hour) {
+        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        if (hour >= 6 && hour < 17) {
+            document.body.classList.add('theme-morning');
+        } else if (hour >= 17 && hour < 20) {
+            document.body.classList.add('theme-evening');
+        } else {
+            document.body.classList.add('theme-night');
+        }
+    }
+
+    const canvas = document.getElementById('themeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let currentHour = new Date().getHours();
+    
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initParticles() {
+        particles = [];
+        let count = 0;
+        let isNight = currentHour >= 20 || currentHour < 6;
+        let isEve = currentHour >= 17 && currentHour < 20;
+        let isMorning = currentHour >= 6 && currentHour < 17;
+
+        if (isMorning) count = 80; // 아침: 부유하는 먼지/햇살
+        else if (isEve) count = 50; // 저녁: 따뜻한 주황빛 입자
+        else count = 120; // 밤: 별처럼 많은 수 (기존 유지)
+
+        for (let i = 0; i < count; i++) {
+            particles.push(createParticle(isNight, isEve, isMorning));
+        }
+    }
+
+    function createParticle(isNight, isEve, isMorning) {
+        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
+        if (isMorning) {
+            // 아침: 먼지 느낌, 매우 연하고 작고 느리게 이동
+            size = Math.random() * 1.5 + 0.5;
+            speedX = (Math.random() - 0.5) * 0.15; // 좌우 아주 약간
+            speedY = Math.random() * 0.2 + 0.05; // 부유하며 살짝 내려감
+            color = '255, 255, 255'; 
+            twinkleSpeed = Math.random() * 0.005 + 0.002;
+            maxAlpha = Math.random() * 0.3 + 0.1; // 최대 조차도 흐릿함
+        } else if (isEve) {
+            // 저녁: 따뜻한 주황빛 퍼짐과 어울리는 입자, 좌에서 우로 약간 번지듯 이동
+            size = Math.random() * 2.5 + 1;
+            speedX = Math.random() * 0.3 + 0.1; // 왼쪽에서 퍼져나가는 속도
+            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
+            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50'; // 따뜻한 주황/노랑
+            twinkleSpeed = Math.random() * 0.01 + 0.005;
+            maxAlpha = Math.random() * 0.6 + 0.2;
+        } else {
+            // 밤: 유지 (미세한 별빛)
+            size = Math.random() * 1.5;
+            speedX = (Math.random() - 0.5) * 0.1;
+            speedY = (Math.random() - 0.5) * 0.1;
+            color = '255, 255, 255';
+            twinkleSpeed = Math.random() * 0.02 + 0.005;
+            maxAlpha = Math.random() * 0.8 + 0.2;
+        }
+        return { 
+            x: Math.random() * width, 
+            y: Math.random() * height, 
+            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
+            alpha: Math.random() * maxAlpha, 
+            alphaDir: Math.random() > 0.5 ? 1 : -1 
+        };
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        let isEve = currentHour >= 17 && currentHour < 20;
+
+        particles.forEach(p => {
+            p.alpha += p.twinkleSpeed * p.alphaDir;
+            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
+            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            
+            // 저녁에는 자체 글로우 (은은한 퍼짐 극대화)
+            if (isEve) {
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    applyBodyTheme(currentHour);
+    initParticles();
+    drawParticles();
+
+    setInterval(() => {
+        let newHour = new Date().getHours();
+        if (newHour !== currentHour) {
+            currentHour = newHour;
+            applyBodyTheme(currentHour);
+            initParticles();
+        }
+    }, 60000);
+})();
+</script>
+
+</body>
+
+</html>

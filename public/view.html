@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <title>Dear Me - 상세보기</title>
+    <link rel="stylesheet" href="/style.css?v=1776116934115">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+
+        /* 2. 상세보기 박스 레이아웃 */
+        .main-wrapper { max-width: 1000px; margin: 50px auto !important; padding: 0 20px; }
+        .content-box { background: white; border-radius: 30px; border: 3px solid #5c67f2; padding: 50px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+        
+        .view-header { border-bottom: 2px solid #eee; padding-bottom: 25px; margin-bottom: 30px; }
+        #viewTitle { font-size: 2.4rem; font-weight: bold; color: #333; margin-bottom: 15px; text-align: left; }
+        .view-info { color: #888; font-size: 1.1rem; display: flex; gap: 20px; }
+        
+        /* 3. 본문 스타일 */
+        #viewContent { min-height: 350px; font-size: 1.35rem; line-height: 2.2; color: #444; word-break: break-all; text-align: left; }
+        
+        /* [중요] 첨부파일 태그 스타일 및 클릭 효과 */
+        .attached-file-tag {
+            display: inline-flex; align-items: center; background: #f1f3f5; color: #5c67f2 !important;
+            padding: 8px 18px; border-radius: 25px; font-size: 1.1rem; margin: 10px 5px;
+            text-decoration: none !important; border: 2px solid #dee2e6; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .attached-file-tag:hover { background: #5c67f2; color: white !important; border-color: #5c67f2; transform: translateY(-2px); }
+        .attached-file-tag i { margin-right: 10px; }
+
+        .view-footer { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; align-items: center; }
+        
+        /* 버튼 그룹화 스타일 */
+        .action-buttons { display: flex; gap: 10px; }
+        
+        .btn-list { background: #f0f0f0; color: #666; padding: 15px 35px; border-radius: 15px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 1.15rem; display: inline-block; }
+        
+        /* [수정] 수정하기 버튼 스타일 (파란색 계열) */
+        .btn-edit { background: #5c67f2; color: white; padding: 15px 35px; border-radius: 15px; font-weight: bold; cursor: pointer; border: none; font-size: 1.15rem; }
+        .btn-edit:hover { background: #4a54d1; }
+        
+        .btn-delete { background: #ff6b6b; color: white; padding: 15px 35px; border-radius: 15px; font-weight: bold; cursor: pointer; border: none; font-size: 1.15rem; }
+
+        /* 4. 댓글 섹션 스타일 (새로 추가) */
+        .comment-section { margin-top: 40px; padding-top: 20px; text-align: left; }
+        .comment-header { font-size: 1.2rem; font-weight: bold; color: #555; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        
+        .comment-input-box { display: flex; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: white; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .comment-textarea { flex: 1; border: none; padding: 15px; font-size: 1.05rem; resize: none; min-height: 100px; outline: none; font-family: inherit; box-sizing: border-box; }
+        .btn-comment-submit-inline { background: #eafdff; border: none; border-left: 1px solid #ddd; width: 120px; font-weight: bold; cursor: pointer; color: #007bb5; font-size: 1.1rem; transition: 0.2s; }
+        .btn-comment-submit-inline:hover { background: #d0f4fa; }
+
+        .comment-list { list-style: none; padding: 0; margin: 0; }
+        .comment-item { padding: 20px 0; border-bottom: 1px solid #eee; text-align: left; }
+        .comment-meta { font-size: 0.9rem; color: #888; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
+        .comment-meta strong { color: #333; font-size: 1.0rem; }
+        .comment-text { font-size: 1.05rem; color: #444; line-height: 1.6; white-space: pre-wrap; }
+        
+        /* 5. 대댓글 및 버튼 스타일 */
+        .btn-comment-reply { background: white; border: 1px solid #ddd; padding: 5px 12px; border-radius: 4px; cursor: pointer; color: #555; transition: 0.2s; font-size: 0.9rem; }
+        .btn-comment-reply:hover { background: #f1f3f5; }
+        .btn-comment-delete { background: none; border: none; font-size: 0.8rem; color: #aaa; cursor: pointer; text-decoration: underline; margin-left: auto; }
+        .btn-comment-delete:hover { color: #ff6b6b; }
+        
+        .comment-bottom-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .comment-actions { display: flex; gap: 10px; }
+        .btn-comment-like, .btn-comment-dislike { background: white; border: 1px solid #ccc; padding: 5px 12px; border-radius: 4px; cursor: pointer; color: #666; transition: 0.2s; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+        .btn-comment-like:hover { background: #f0f8ff; border-color: #3498db; color: #3498db; }
+        .btn-comment-dislike:hover { background: #fff0f0; border-color: #e74c3c; color: #e74c3c; }
+    </style>
+    <script src="/mobile-nav.js" defer></script>
+</head>
+<body>
+
+<script>
+// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+(function(){
+    var h = new Date().getHours();
+    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
+    document.body.classList.add(c);
+})();
+</script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo" onclick="location.href='/'" style="cursor:pointer;">Dear Me</h1>
+            <ul class="nav-menu">
+                <li><a href="/">메인</a></li>
+                <li><a href="/recommend">명언추천</a></li>
+                <li><a href="/library">명언 보관함</a></li>
+                <li><a href="/pet-collection">짱구 도감 🐾</a></li>
+                <li><a href="/mypage">마이페이지</a></li>
+                
+                <li class="nav-dropdown">
+                    <a href="/board" style="color: #5c67f2; font-weight: bold;">익명 게시판 <i class="fa-solid fa-caret-down"></i></a>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/board" style="color: #5c67f2; font-weight: bold;">익명 게시판</a></li>
+                        <li><a href="/postbox">위로 우체통 <span id="postboxBadge" style="display:none; background:#ff5252; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; margin-left:5px;">N</span></a></li>
+                    </ul>
+                </li>
+                <li id="menu-login"><a href="/login">로그인</a></li>
+                <li id="menu-logout" style="display:none;"><a href="javascript:void(0)" onclick="logout()">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <div class="content-box">
+            <div class="view-header">
+                <div id="viewTitle"></div>
+                <div class="view-info">
+                    <span id="viewUser"><i class="fa-solid fa-user"></i> 작성자</span>
+                    <span id="viewDate"><i class="fa-solid fa-clock"></i> 날짜</span>
+                    <span id="viewViewsArea"><i class="fa-solid fa-eye"></i> <span id="viewViewsNum">0</span></span>
+                </div>
+            </div>
+
+            <div id="viewContent"></div>
+
+            <div class="view-footer">
+                <a href="/board" class="btn-list">목록으로</a>
+                <div class="action-buttons">
+                    <button id="editBtn" class="btn-edit" style="display:none;" onclick="location.href='/board/edit/' + postId">수정하기</button>
+                    <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deletePost()">삭제하기</button>
+                </div>
+            </div>
+
+            <!-- 댓글 영역 추가 -->
+            <div class="comment-section">
+                <div class="comment-header">
+                    <i class="fa-regular fa-comment-dots" style="color: #e74c3c;"></i> 
+                    댓글 <span id="commentCount">0</span>
+                </div>
+                
+                <div class="comment-input-box">
+                    <textarea id="commentContent" class="comment-textarea" placeholder="내용을 입력하세요"></textarea>
+                    <button class="btn-comment-submit-inline" onclick="submitComment()">등록</button>
+                </div>
+
+                <ul class="comment-list" id="commentList">
+                    <!-- 댓글이 렌더링될 공간 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL에서 게시글 ID 추출 (ID가 0이면 공지사항)
+        const postId = window.location.pathname.split('/').pop();
+        const loginUser = sessionStorage.getItem('loginUser');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 강제로 HTML 상의 로딩 텍스트 지우기 (새로고침 시 남아있을 수 있는 텍스트)
+            const titleEl = document.getElementById('viewTitle');
+            const contentEl = document.getElementById('viewContent');
+            if (titleEl && titleEl.innerText && titleEl.innerText.includes('불러오')) titleEl.innerText = '';
+            if (contentEl && contentEl.innerText && contentEl.innerText.includes('불러오')) contentEl.innerText = '';
+
+            const loginMenu = document.getElementById('menu-login');
+            const logoutMenu = document.getElementById('menu-logout');
+            if (loginUser) {
+                if(loginMenu) loginMenu.style.display = 'none';
+                if(logoutMenu) logoutMenu.style.display = 'block';
+            }
+        });
+
+        function logout() {
+            if(confirm("로그아웃 하시겠습니까?")) {
+                sessionStorage.removeItem('loginUser');
+                location.href = "/";
+            }
+        }
+
+        async function loadPost() {
+            try {
+                const res = await fetch(`/api/board/post/${postId}?username=${encodeURIComponent(loginUser)}`);
+                const data = await res.json();
+                
+                if (data && data.length > 0) {
+                    const post = data[0];
+                    document.getElementById('viewTitle').innerText = post.title;
+                    
+                    // 작성자 표시를 닉네임 대신 '익명'이나 '관리자'로 마스킹
+                    let displayOpUser = '익명';
+                    if (post.username === 'admin' || post.username === '관리자') displayOpUser = post.username;
+                    document.getElementById('viewUser').innerHTML = `<i class="fa-solid fa-user"></i> ${displayOpUser}`;
+                    document.getElementById('viewDate').innerHTML = `<i class="fa-solid fa-clock"></i> ${new Date(post.created_at).toLocaleDateString()}`;
+                    
+                    // [핵심 수정] is_notice 속성이 1인 경우 공지사항으로 판단 (조회수 숨김)
+                    const isNotice = post.is_notice === 1;
+                    if (isNotice) {
+                        document.getElementById('viewViewsArea').style.display = 'none';
+                    } else {
+                        document.getElementById('viewViewsArea').style.display = 'inline';
+                        document.getElementById('viewViewsNum').innerText = (post.views || 0).toLocaleString();
+                    }
+                    
+                    document.getElementById('viewContent').innerHTML = post.content;
+
+                    // 이미지 뷰어 로직 (이벤트 위임 및 기존 깨진 인라인 onclick 속성 제거)
+                    const contentArea = document.getElementById('viewContent');
+                    contentArea.querySelectorAll('.attached-file-tag').forEach(tag => {
+                        const aTag = tag.tagName === 'A' ? tag : tag.querySelector('a');
+                        if (aTag) {
+                            aTag.removeAttribute('onclick');
+                        }
+                    });
+
+                    contentArea.addEventListener('click', function(e) {
+                        const fileTag = e.target.closest('.attached-file-tag');
+                        if (fileTag) {
+                            const deleteBtn = e.target.closest('.delete-file-btn');
+                            if (!deleteBtn) {
+                                const aTag = fileTag.tagName === 'A' ? fileTag : fileTag.querySelector('a');
+                                if (aTag) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const imgData = aTag.getAttribute('href');
+                                    if (imgData) {
+                                        const viewer = window.open("");
+                                        viewer.document.write(`<html><body style="margin:0; background:#111; display:flex; justify-content:center; align-items:center; min-height:100vh;"><img src="${imgData}" style="max-width:100%; max-height:100vh; cursor:zoom-out;" onclick="window.close()"></body></html>`);
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // [수정] 본인 글이거나 로그인 아이디가 'admin'인 경우 에디터 권한 부여
+                    const currentUser = (loginUser || '').trim();
+                    const authorUser = (post.username || '').trim();
+                    const isAdmin = (currentUser === 'admin' || currentUser === '관리자');
+
+                    if (currentUser === authorUser || isAdmin) {
+                        document.getElementById('editBtn').style.display = 'inline-block';
+                        document.getElementById('deleteBtn').style.display = 'inline-block';
+                    }
+
+                    // [추가] 댓글 리스트 렌더링
+                    const comments = data.filter(p => String(p.parent_id) === String(post.id));
+                    const commentList = document.getElementById('commentList');
+                    commentList.innerHTML = '';
+                    
+                    // [추가] 익명 사용자 구분 (익명1, 익명2, 익명 (작성자))
+                    const opUser = post.username;
+                    const aliasMap = {};
+                    let anonCount = 1;
+
+                    function getAlias(actualUsername) {
+                        // 과거 데이터 등으로 아예 이름이 '익명'이거나 없는 경우
+                        if (!actualUsername || actualUsername === '익명') return '익명';
+                        if (actualUsername === 'admin' || actualUsername === '관리자') return '관리자';
+                        if (actualUsername === opUser) return '익명 (작성자)';
+                        
+                        // 이미 부여받은 익명 번호가 있으면 반환, 없으면 새로 부여
+                        if (aliasMap[actualUsername]) return aliasMap[actualUsername];
+                        aliasMap[actualUsername] = `익명${anonCount++}`;
+                        return aliasMap[actualUsername];
+                    }
+
+                    function generateCommentHTML(c, depth) {
+                        const isReply = depth > 0;
+                        const displayAlias = getAlias(c.username); // 여기서 변환!
+                        
+                        // [수정] 무조건 삭제 버튼을 보여주지 않고, 댓글 원작성자이거나 관리자일 때만 노출
+                        const currentUser = (loginUser || '').trim();
+                        const isAdminUser = (currentUser === 'admin' || currentUser === '관리자');
+                        const canDelete = (c.username === currentUser || isAdminUser);
+
+                        return `
+                            <div class="comment-meta">
+                                ${isReply ? '<span style="color:#aaa; font-weight:bold; margin-right:5px;">↳</span>' : ''}
+                                <strong>${displayAlias}</strong>
+                                <span>${new Date(c.created_at).toLocaleString()}</span>
+                                ${canDelete ? `<button class="btn-comment-delete" onclick="deleteComment(${c.id})">삭제</button>` : ''}
+                            </div>
+                            <div class="comment-text">${c.content}</div>
+                            <div class="comment-bottom-bar">
+                                <button class="btn-comment-reply" onclick="toggleReplyBox(${c.id})">댓글</button>
+                                <div class="comment-actions">
+                                    <button class="btn-comment-like" onclick="toggleCommentAction(${c.id}, 'like')"><i class="fa-regular fa-thumbs-up"></i> ${c.likes || 0}</button>
+                                    <button class="btn-comment-dislike" onclick="toggleCommentAction(${c.id}, 'dislike')"><i class="fa-regular fa-thumbs-down"></i> ${c.dislikes || 0}</button>
+                                </div>
+                            </div>
+                            <div id="replyBox-${c.id}" style="display: none; margin-top: 15px; padding-left: 20px; border-left: 2px solid #eee;">
+                                <div class="comment-input-box" style="margin-bottom: 0;">
+                                    <textarea id="replyContent-${c.id}" class="comment-textarea" placeholder="답글을 입력하세요" style="min-height: 60px;"></textarea>
+                                    <button class="btn-comment-submit-inline" onclick="submitReply(${c.id})">등록</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    let actualRenderedCount = 0;
+
+                    // 재귀 방식으로 대대댓글 무한 트리를 그립니다.
+                    function renderComments(parentId, depth) {
+                        // 부모 ID에 속한 자식 댓글 필터링
+                        const children = comments.filter(c => {
+                            if (!parentId) return !c.reply_target_id;
+                            return String(c.reply_target_id) === String(parentId);
+                        });
+
+                        children.forEach(c => {
+                            actualRenderedCount++;
+                            const li = document.createElement('li');
+                            li.className = 'comment-item';
+                            if (depth > 0) {
+                                // 들여쓰기는 최대 160px로 제한하여 너무 많이 들어가는 것을 방지
+                                const padding = Math.min(depth * 40, 160);
+                                li.style.paddingLeft = `${padding}px`;
+                                li.style.borderLeft = '4px solid #f6f6f6';
+                                li.style.background = depth % 2 === 1 ? '#fafafa' : '#fff'; // 계층마다 배경색 살짝 다르게
+                            }
+                            li.innerHTML = generateCommentHTML(c, depth);
+                            commentList.appendChild(li);
+
+                            // 현재 댓글을 부모로 두는 자식(대대댓글) 렌더링 호출
+                            renderComments(c.id, depth + 1);
+                        });
+                    }
+
+                    // 최상위 댓글부터 렌더링 시작
+                    renderComments(null, 0);
+
+                    // 화면에 실제로 그려진 유효한 댓글 개수만 상단에 표시
+                    document.getElementById('commentCount').innerText = actualRenderedCount;
+
+                } else {
+                    alert("게시글을 찾을 수 없습니다.");
+                    location.href = "/board";
+                }
+            } catch (err) { console.error("로딩 에러:", err); }
+        }
+
+        // 공지사항일 때는 실시간 조회를 아예 요청하지 않음
+        async function updateViewsOnly() {
+            if (postId === '0' || postId === 'notice') return;
+
+            try {
+                const res = await fetch(`/api/board/post/${postId}?isListView=true`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    const viewNum = document.getElementById('viewViewsNum');
+                    if (viewNum) viewNum.innerText = (data[0].views || 0).toLocaleString();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function deletePost() {
+            if (!confirm("정말로 이 글을 삭제하시겠습니까?")) return;
+            try {
+                const currentUser = (loginUser || '').trim();
+                const isAdmin = (currentUser === 'admin' || currentUser === '관리자');
+
+                const res = await fetch(`/api/board/post/${postId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: loginUser, isAdmin: isAdmin })
+                });
+                if (res.ok) { alert("삭제되었습니다."); location.href = "/board"; }
+                else { alert("삭제 권한이 없거나 실패했습니다."); }
+            } catch (err) { console.error(err); }
+        }
+
+        // [추가] 댓글 액션 토글 기능
+        async function toggleCommentAction(commentId, actionType) {
+            if (!loginUser) return alert("로그인이 필요합니다.");
+            try {
+                const res = await fetch(`/api/board/${actionType}/${commentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: loginUser })
+                });
+                if (res.ok) loadPost();
+            } catch (err) { console.error(err); }
+        }
+
+        // [수정] 댓글 삭제 기능
+        async function deleteComment(commentId) {
+            if (!confirm("이 댓글을 삭제하시겠습니까? (하위 대댓글도 모두 삭제됩니다)")) return;
+            try {
+                const currentUser = (loginUser || '').trim();
+                const isAdmin = (currentUser === 'admin' || currentUser === '관리자');
+                
+                const res = await fetch(`/api/board/post/${commentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUser, isAdmin: isAdmin })
+                });
+                if (res.ok) { alert("댓글이 삭제되었습니다."); loadPost(); }
+                else { alert("삭제 권한이 없거나 서버와 연결할 수 없습니다."); }
+            } catch (err) { console.error(err); }
+        }
+
+        // [추가] 대댓글 창 토글
+        function toggleReplyBox(id) {
+            const box = document.getElementById(`replyBox-${id}`);
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitReply(targetId) {
+            const content = document.getElementById(`replyContent-${targetId}`).value.trim();
+            if (!content) return alert("답글 내용을 입력해주세요!");
+
+            try {
+                const res = await fetch('/api/board/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: loginUser || '익명', // 실제 유저 아이디를 보내어 구분할 수 있게 함
+                        title: '대댓글',
+                        content: content,
+                        parent_id: postId,
+                        reply_target_id: targetId
+                    })
+                });
+                if (res.ok) {
+                    loadPost();
+                } else {
+                    alert("답글 등록에 실패했습니다.");
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function submitComment() {
+            const content = document.getElementById('commentContent').value.trim();
+
+            if (!content) return alert("댓글 내용을 입력해주세요!");
+
+            try {
+                const res = await fetch('/api/board/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: loginUser || '익명',  // 닉네임을 가리더라도 DB 상에는 실제 아이디를 남겨 익명1, 2 구분에 사용
+                        title: '댓글',
+                        content: content,
+                        parent_id: postId
+                    })
+                });
+                if (res.ok) {
+                    document.getElementById('commentContent').value = '';
+                    loadPost(); // 새 댓글 목록 렌더링
+                } else {
+                    alert("댓글 등록에 실패했습니다.");
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // 초기 실행
+        loadPost();
+        
+        // 1초 주기로 조회수만 갱신 (공지사항이 아닐 때만 작동)
+        setInterval(updateViewsOnly, 1000);
+    </script>
+
+<!-- Global Auth Security & Heartbeat (Injected) -->
+<script>
+(function() {
+    const u = sessionStorage.getItem('loginUser');
+    if (u) {
+        // 즉시 세션 유효성 검사 (서버 재실행 등 감지)
+        fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) {
+                sessionStorage.removeItem('loginUser');
+                alert("세션이 만료되었거나 서버가 재시작되었습니다. 다시 로그인해주세요.");
+                location.href = "/login";
+            }
+        }).catch(()=>{});
+
+        // 3초마다 생존 신고
+        setInterval(() => {
+            fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success) {
+                    sessionStorage.removeItem('loginUser');
+                    alert("세션이 만료되었습니다.");
+                    location.href = "/login";
+                }
+            }).catch(()=>{});
+        }, 3000);
+    }
+    window.logout = function() {
+        if (confirm("로그아웃 하시겠습니까?")) {
+            const currentUser = sessionStorage.getItem('loginUser');
+            if (currentUser) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser})
+                }).then(() => {
+                    sessionStorage.removeItem('loginUser');
+                    alert("정상적으로 로그아웃 되었습니다.");
+                    location.href = "/";
+                }).catch(() => {
+                    sessionStorage.removeItem('loginUser');
+                    location.href = "/";
+                });
+            } else {
+                location.href = "/";
+            }
+        }
+    };
+})();
+</script>
+
+<!-- 시간대별 고급 파티클 테마 및 글로우 효과 -->
+<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+<script>
+(function() {
+    function applyBodyTheme(hour) {
+        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        if (hour >= 6 && hour < 17) {
+            document.body.classList.add('theme-morning');
+        } else if (hour >= 17 && hour < 20) {
+            document.body.classList.add('theme-evening');
+        } else {
+            document.body.classList.add('theme-night');
+        }
+    }
+
+    const canvas = document.getElementById('themeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let currentHour = new Date().getHours();
+    
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initParticles() {
+        particles = [];
+        let count = 0;
+        let isNight = currentHour >= 20 || currentHour < 6;
+        let isEve = currentHour >= 17 && currentHour < 20;
+        let isMorning = currentHour >= 6 && currentHour < 17;
+
+        if (isMorning) count = 80;
+        else if (isEve) count = 50;
+        else count = 120;
+
+        for (let i = 0; i < count; i++) {
+            particles.push(createParticle(isNight, isEve, isMorning));
+        }
+    }
+
+    function createParticle(isNight, isEve, isMorning) {
+        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
+        if (isMorning) {
+            size = Math.random() * 1.5 + 0.5;
+            speedX = (Math.random() - 0.5) * 0.15;
+            speedY = Math.random() * 0.2 + 0.05;
+            color = '255, 255, 255'; 
+            twinkleSpeed = Math.random() * 0.005 + 0.002;
+            maxAlpha = Math.random() * 0.3 + 0.1;
+        } else if (isEve) {
+            size = Math.random() * 2.5 + 1;
+            speedX = Math.random() * 0.3 + 0.1;
+            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
+            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50';
+            twinkleSpeed = Math.random() * 0.01 + 0.005;
+            maxAlpha = Math.random() * 0.6 + 0.2;
+        } else {
+            size = Math.random() * 1.5;
+            speedX = (Math.random() - 0.5) * 0.1;
+            speedY = (Math.random() - 0.5) * 0.1;
+            color = '255, 255, 255';
+            twinkleSpeed = Math.random() * 0.02 + 0.005;
+            maxAlpha = Math.random() * 0.8 + 0.2;
+        }
+        return { 
+            x: Math.random() * width, 
+            y: Math.random() * height, 
+            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
+            alpha: Math.random() * maxAlpha, 
+            alphaDir: Math.random() > 0.5 ? 1 : -1 
+        };
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        let isEve = currentHour >= 17 && currentHour < 20;
+
+        particles.forEach(p => {
+            p.alpha += p.twinkleSpeed * p.alphaDir;
+            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
+            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            
+            if (isEve) {
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    applyBodyTheme(currentHour);
+    initParticles();
+    drawParticles();
+
+    setInterval(() => {
+        let newHour = new Date().getHours();
+        if (newHour !== currentHour) {
+            currentHour = newHour;
+            applyBodyTheme(currentHour);
+            initParticles();
+        }
+    }, 60000);
+})();
+</script>
+</body>
+</html>

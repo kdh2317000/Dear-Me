@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <meta charset="UTF-8">
+    <title>Read US - 로그인</title>
+    <style>
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; /* 위로 올리기 위해 상단 정렬 */
+            height: 100vh; 
+            background-color: #fff9c4; /* 메인과 동일한 노란색 */
+            margin: 0; 
+            padding-top: 80px; /* 위에서 80px 지점에 위치 */
+            font-family: sans-serif; 
+        }
+        .login-box { 
+            background: white; 
+            padding: 60px; /* 안쪽 여백을 늘려 크기 키움 */
+            border-radius: 30px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 450px; /* 기존보다 약 100px 넓게 설정 */
+            text-align: center; 
+            border: 3px solid #5c67f2;
+        }
+        h2 { font-size: 2.5rem; color: #5c67f2; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; position: relative; }
+        input { 
+            width: 100%; 
+            padding: 18px; 
+            font-size: 1.1rem; 
+            border: 2px solid #ddd; 
+            border-radius: 15px; 
+            box-sizing: border-box; 
+        }
+        .password-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+            display: flex;
+            align-items: center;
+        }
+        .password-toggle svg {
+            width: 24px;
+            height: 24px;
+        }
+        /* 브라우저 기본 눈알 숨김 (Edge 등) */
+        .password-input::-ms-reveal,
+        .password-input::-ms-clear {
+            display: none;
+        }
+        button { 
+            width: 100%; 
+            padding: 18px; 
+            background: #5c67f2; 
+            color: white; 
+            border: none; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            font-size: 1.2rem; 
+            font-weight: bold;
+            margin-top: 20px; 
+        }
+        .link { margin-top: 25px; font-size: 1rem; color: #666; }
+        .link a { color: #5c67f2; text-decoration: none; font-weight: bold; }
+    </style>
+    <script src="/mobile-nav.js" defer></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<script>
+// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+(function(){
+    var h = new Date().getHours();
+    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
+    document.body.classList.add(c);
+})();
+</script>
+
+    <div class="login-box">
+        <h2>로그인</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="아이디" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" name="password" class="password-input" placeholder="비밀번호" required>
+                <span class="password-toggle" onclick="togglePassword()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </span>
+            </div>
+            <button type="submit">로그인하기</button>
+        </form>
+        <div class="link">
+            계정이 없으신가요? <a href="/register">회원가입하기</a>
+        </div>
+    </div>
+    <script>
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const toggleIcon = document.querySelector('.password-toggle svg');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                toggleIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            } else {
+                pwd.type = 'password';
+                toggleIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const username = e.target.username.value;
+                const password = e.target.password.value;
+                try {
+                    const res = await fetch('/login-process', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({username, password})
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        sessionStorage.setItem('loginUser', data.username);
+                        alert(data.username + "님 환영합니다!");
+                        location.href = "/";
+                    } else {
+                        alert(data.message || "로그인 실패");
+                    }
+                } catch (err) {
+                    alert("서버 연결 오류");
+                }
+            };
+        });
+    </script>
+
+<!-- Global Auth Security & Heartbeat (Injected) -->
+<script>
+(function() {
+    const u = sessionStorage.getItem('loginUser');
+    if (u) {
+        // 즉시 세션 유효성 검사 (서버 재실행 등 감지)
+        fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) {
+                sessionStorage.removeItem('loginUser');
+                alert("세션이 만료되었거나 서버가 재시작되었습니다. 다시 로그인해주세요.");
+                location.href = "/login";
+            }
+        }).catch(()=>{});
+
+        // 20초마다 생존 신고
+        setInterval(() => {
+            fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success) {
+                    sessionStorage.removeItem('loginUser');
+                    alert("세션이 만료되었습니다.");
+                    location.href = "/login";
+                }
+            }).catch(()=>{});
+        }, 3000);
+    }
+    window.logout = function() {
+        if (confirm("로그아웃 하시겠습니까?")) {
+            const currentUser = sessionStorage.getItem('loginUser');
+            if (currentUser) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser})
+                }).then(() => {
+                    sessionStorage.removeItem('loginUser');
+                    alert("정상적으로 로그아웃 되었습니다.");
+                    location.href = "/";
+                }).catch(() => {
+                    sessionStorage.removeItem('loginUser');
+                    location.href = "/";
+                });
+            } else {
+                location.href = "/";
+            }
+        }
+    };
+})();
+</script>
+
+
+
+
+
+
+
+
+
+<!-- 시간대별 고급 파티클 테마 및 글로우 효과 -->
+<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+<script>
+(function() {
+    function applyBodyTheme(hour) {
+        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        if (hour >= 6 && hour < 17) {
+            document.body.classList.add('theme-morning');
+        } else if (hour >= 17 && hour < 20) {
+            document.body.classList.add('theme-evening');
+        } else {
+            document.body.classList.add('theme-night');
+        }
+    }
+
+    const canvas = document.getElementById('themeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let currentHour = new Date().getHours();
+    
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initParticles() {
+        particles = [];
+        let count = 0;
+        let isNight = currentHour >= 20 || currentHour < 6;
+        let isEve = currentHour >= 17 && currentHour < 20;
+        let isMorning = currentHour >= 6 && currentHour < 17;
+
+        if (isMorning) count = 80; // 아침: 부유하는 먼지/햇살
+        else if (isEve) count = 50; // 저녁: 따뜻한 주황빛 입자
+        else count = 120; // 밤: 별처럼 많은 수 (기존 유지)
+
+        for (let i = 0; i < count; i++) {
+            particles.push(createParticle(isNight, isEve, isMorning));
+        }
+    }
+
+    function createParticle(isNight, isEve, isMorning) {
+        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
+        if (isMorning) {
+            // 아침: 먼지 느낌, 매우 연하고 작고 느리게 이동
+            size = Math.random() * 1.5 + 0.5;
+            speedX = (Math.random() - 0.5) * 0.15; // 좌우 아주 약간
+            speedY = Math.random() * 0.2 + 0.05; // 부유하며 살짝 내려감
+            color = '255, 255, 255'; 
+            twinkleSpeed = Math.random() * 0.005 + 0.002;
+            maxAlpha = Math.random() * 0.3 + 0.1; // 최대 조차도 흐릿함
+        } else if (isEve) {
+            // 저녁: 따뜻한 주황빛 퍼짐과 어울리는 입자, 좌에서 우로 약간 번지듯 이동
+            size = Math.random() * 2.5 + 1;
+            speedX = Math.random() * 0.3 + 0.1; // 왼쪽에서 퍼져나가는 속도
+            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
+            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50'; // 따뜻한 주황/노랑
+            twinkleSpeed = Math.random() * 0.01 + 0.005;
+            maxAlpha = Math.random() * 0.6 + 0.2;
+        } else {
+            // 밤: 유지 (미세한 별빛)
+            size = Math.random() * 1.5;
+            speedX = (Math.random() - 0.5) * 0.1;
+            speedY = (Math.random() - 0.5) * 0.1;
+            color = '255, 255, 255';
+            twinkleSpeed = Math.random() * 0.02 + 0.005;
+            maxAlpha = Math.random() * 0.8 + 0.2;
+        }
+        return { 
+            x: Math.random() * width, 
+            y: Math.random() * height, 
+            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
+            alpha: Math.random() * maxAlpha, 
+            alphaDir: Math.random() > 0.5 ? 1 : -1 
+        };
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        let isEve = currentHour >= 17 && currentHour < 20;
+
+        particles.forEach(p => {
+            p.alpha += p.twinkleSpeed * p.alphaDir;
+            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
+            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            
+            // 저녁에는 자체 글로우 (은은한 퍼짐 극대화)
+            if (isEve) {
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    applyBodyTheme(currentHour);
+    initParticles();
+    drawParticles();
+
+    setInterval(() => {
+        let newHour = new Date().getHours();
+        if (newHour !== currentHour) {
+            currentHour = newHour;
+            applyBodyTheme(currentHour);
+            initParticles();
+        }
+    }, 60000);
+})();
+</script>
+
+</body>
+
+</html>

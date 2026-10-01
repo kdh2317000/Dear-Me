@@ -1,0 +1,24 @@
+{
+  "name": "Dear Me - 마음 치유 & 명언",
+  "short_name": "Dear Me",
+  "description": "따뜻한 명언과 마음 치유를 나누는 나만의 감성 힐링 공간",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5c67f2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/cookie.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <meta charset="UTF-8">
+    <title>Dear Me - 고객 지원 센터</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 80px; text-align: center; font-family: 'Pretendard', sans-serif; }
+        .feedback-container { max-width: 600px; margin: 0 auto 50px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid #5c67f2; }
+        h2 { color: #5c67f2; margin-bottom: 30px; font-weight: 900; }
+        .faq-item { margin-bottom: 10px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; text-align: left; }
+        .faq-question { background: #f0f2ff; padding: 15px; cursor: pointer; font-weight: bold; }
+        .faq-answer { padding: 15px; display: none; background: #fff; border-top: 1px solid #eee; line-height: 1.6; color: #666; font-size: 0.9rem; }
+        .input-group { text-align: left; margin-top: 20px; }
+        textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #ddd; border-radius: 12px; font-size: 1rem; resize: none; box-sizing: border-box; }
+        .send-btn { width: 100%; padding: 15px; background: #5c67f2; color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .send-btn.edit-mode { background: #ff9800; }
+        .cancel-btn { display:none; width:100%; border:none; background:none; color:#999; margin-top:10px; cursor:pointer; text-decoration: underline; font-size: 0.9rem; }
+        .history-section { margin-top: 40px; text-align: left; border-top: 2px dashed #eee; padding-top: 30px; }
+        .history-item { background: #fffdf0; padding: 20px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #ffeeb5; position: relative; transition: 0.2s; }
+        .history-content-area { cursor: pointer; margin-right: 110px; }
+        .history-content { font-size: 0.95rem; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+        .history-date { font-size: 0.75rem; color: #999; display: block; margin-top: 5px; }
+        .reply-box { margin-top: 15px; padding: 15px; background: #f0f2ff; border-radius: 10px; border-left: 5px solid #5c67f2; font-size: 0.9rem; }
+        .reply-label { font-weight: bold; color: #5c67f2; display: block; margin-bottom: 5px; }
+        .admin-reply-input { margin-top: 10px; display: flex; gap: 5px; }
+        .admin-reply-input input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
+        .admin-reply-btn { padding: 10px 15px; background: #333; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; }
+        .item-btn-group { position: absolute; right: 15px; top: 20px; display: flex; gap: 5px; }
+        .btn-small { border: none; border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; cursor: pointer; color: white; transition: 0.2s; }
+        .edit-item-btn { background: #5c67f2; }
+        .del-item-btn { background: #ff5252; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; position: absolute; left: 50%; top: 30%; transform: translate(-50%, -10%); border-radius: 20px; width: 80%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; }
+        .modal-header { background: #fcfcff; padding: 20px; font-weight: bold; font-size: 1.1rem; color: #5c67f2; border-bottom: 1px solid #eee; cursor: move; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 30px; font-size: 1rem; line-height: 1.6; color: #333; white-space: pre-wrap; min-height: 120px; text-align: left; }
+        .modal-footer { padding: 0 30px 30px 30px; }
+        .modal-close-icon { cursor: pointer; color: #aaa; font-size: 1.5rem; line-height: 1; }
+        .logout-link { color: #ff5252 !important; font-weight: bold; cursor: pointer; }
+    </style>
+    <script src="/mobile-nav.js" defer></script>
+</head>
+<body>
+
+<script>
+// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+(function(){
+    var h = new Date().getHours();
+    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
+    document.body.classList.add(c);
+})();
+</script>
+
+<div class="feedback-container">
+    <h2>고객 지원 센터 <span id="admin-badge" style="display:none; font-size:0.8rem; color:red; vertical-align: middle;">[관리자 모드]</span></h2>
+    
+    <div class="faq-section">
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(0)">[FAQ] 명언 보관함은 어떻게 이용하나요?</div>
+            <div class="faq-answer" id="faq-0">명언 추천 페이지에서 하트(♥) 버튼을 누르면 보관함으로 자동으로 저장됩니다.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(1)">[FAQ] 직접 명언을 등록할 수 있나요?</div>
+            <div class="faq-answer" id="faq-1">네, '명언추천' 메뉴 하단에서 직접 실시간으로 등록하실 수 있습니다.</div>
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+    <div id="user-input-group" class="input-group">
+        <h3 id="form-title" style="font-size: 1.1rem; margin-bottom: 10px;">✍️ 1:1 문의 남기기</h3>
+        <textarea id="feedbackText" placeholder="의견을 남겨주세요"></textarea>
+        <button id="submit-btn" class="send-btn" onclick="submitFeedback()">문의 보내기</button>
+        <button id="cancel-btn" class="cancel-btn" onclick="resetForm()">수정 취소하기</button>
+    </div>
+
+    <div class="history-section">
+        <div id="list-title" style="font-weight: bold; margin-bottom: 15px; color: #555;">나의 문의 기록</div>
+        <div id="history-list"></div>
+    </div>
+    
+    <a href="javascript:history.back()" style="display:block; margin-top:30px; color:#5c67f2; font-weight:bold; text-decoration:none; font-size:1rem; padding: 10px; background:#f0f2ff; border-radius:10px; transition: 0.2s;">← 이전 페이지로 돌아가기</a>
+</div>
+
+<div id="viewModal" class="modal">
+    <div id="modalContent" class="modal-content">
+        <div id="modalHeader" class="modal-header">
+            <span>문의 상세 내용</span>
+            <span class="modal-close-icon" onclick="closeModal()">&times;</span>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-footer"><button class="send-btn" onclick="closeModal()">닫기</button></div>
+    </div>
+</div>
+
+<script>
+    const loginUser = sessionStorage.getItem('loginUser');
+    const isAdmin = (loginUser === 'admin'); 
+    let currentEditId = null;
+
+    window.onload = function() {
+        if (isAdmin) {
+            document.getElementById('admin-badge').style.display = 'inline';
+            document.getElementById('user-input-group').style.display = 'none';
+            document.getElementById('list-title').innerText = "모든 유저 문의 목록 (관리자 전용)";
+            loadAllHistory();
+        } else if (loginUser) {
+            loadMyHistory();
+        } else {
+            alert("로그인이 필요합니다.");
+            location.href = "/login";
+        }
+        initDraggable(); 
+    };
+
+    function handleLogout() {
+        if (confirm("로그아웃 하시겠습니까?")) {
+            sessionStorage.removeItem('loginUser');
+            location.href = "/login";
+        }
+    }
+
+    function toggleFaq(index) {
+        const answer = document.getElementById(`faq-${index}`);
+        const isVisible = answer.style.display === 'block';
+        document.querySelectorAll('.faq-answer').forEach(el => el.style.display = 'none');
+        if (!isVisible) answer.style.display = 'block';
+    }
+
+    async function loadAllHistory() {
+        const res = await fetch('/api/admin/all-feedbacks');
+        renderList(await res.json());
+    }
+
+    async function loadMyHistory() {
+        const res = await fetch(`/api/my-feedbacks?username=${encodeURIComponent(loginUser)}`);
+        renderList(await res.json());
+    }
+
+    function renderList(data) {
+        const listDiv = document.getElementById('history-list');
+        if (!data || data.length === 0) {
+            listDiv.innerHTML = '<p style="color:#ccc; text-align: center;">내역이 없습니다.</p>';
+            return;
+        }
+
+        if (isAdmin) {
+            const grouped = {};
+            data.forEach(item => {
+                const user = item.username || '익명';
+                if (!grouped[user]) grouped[user] = [];
+                grouped[user].push(item);
+            });
+
+            let html = '';
+            for (const user in grouped) {
+                html += `
+                    <div style="margin-bottom: 25px; border: 2px solid #5c67f2; border-radius: 15px; overflow: hidden; background: white;">
+                        <div style="background: #5c67f2; color: white; padding: 10px 20px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center;">
+                            <span>${user}님의 문의 (${grouped[user].length}건)</span>
+                        </div>
+                        <div style="padding: 15px;">
+                            ${grouped[user].map(item => renderItem(item)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            listDiv.innerHTML = html;
+        } else {
+            listDiv.innerHTML = data.map(item => renderItem(item)).join('');
+        }
+    }
+
+    function renderItem(item) {
+        const safeContent = item.content.replace(/'/g, "\\'").replace(/\n/g, "\\n");
+        return `
+            <div class="history-item">
+                <div class="history-content-area" onclick="viewDetail('${safeContent}')">
+                    <div class="history-content">${item.content}</div>
+                    <span class="history-date">${new Date(item.created_at).toLocaleString()}</span>
+                </div>
+                
+                <div class="item-btn-group">
+                    ${!isAdmin ? `<button class="btn-small edit-item-btn" onclick="prepareEdit(${item.id}, '${safeContent}')">수정</button>` : ''}
+                    <button class="btn-small del-item-btn" onclick="deleteFeedback(${item.id})">삭제</button>
+                </div>
+
+                ${item.reply ? `
+                    <div class="reply-box">
+                        <span class="reply-label">관리자 답변</span>
+                        <div>${item.reply}</div>
+                    </div>
+                ` : ''}
+
+                ${isAdmin ? `
+                    <div class="admin-reply-input">
+                        <input type="text" id="reply-input-${item.id}" placeholder="답변 입력..." value="${item.reply || ''}">
+                        <button class="admin-reply-btn" onclick="addReply(${item.id})">답변하기</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    async function addReply(id) {
+        const replyValue = document.getElementById(`reply-input-${id}`).value;
+        if(!replyValue.trim()) return alert("답변을 입력해주세요.");
+        const res = await fetch(`/api/feedback/reply/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reply: replyValue, isAdmin: true })
+        });
+        if((await res.json()).success) {
+            alert("답변 등록 완료!");
+            loadAllHistory();
+        }
+    }
+
+    async function deleteFeedback(id) {
+        if (!confirm("정말 삭제하시겠습니까?")) return;
+        try {
+            const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                alert("삭제되었습니다.");
+                isAdmin ? loadAllHistory() : loadMyHistory();
+            }
+        } catch (err) {
+            alert("삭제 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    function prepareEdit(id, content) {
+        currentEditId = id;
+        document.getElementById('feedbackText').value = content;
+        document.getElementById('form-title').innerText = "✍️ 문의 내용 수정하기";
+        document.getElementById('submit-btn').innerText = "수정 완료하기";
+        document.getElementById('submit-btn').classList.add('edit-mode');
+        document.getElementById('cancel-btn').style.display = "block";
+    }
+
+    function resetForm() {
+        currentEditId = null;
+        document.getElementById('feedbackText').value = "";
+        document.getElementById('form-title').innerText = "✍️ 1:1 문의 남기기";
+        document.getElementById('submit-btn').innerText = "문의 보내기";
+        document.getElementById('submit-btn').classList.remove('edit-mode');
+        document.getElementById('cancel-btn').style.display = "none";
+    }
+
+    async function submitFeedback() {
+        const content = document.getElementById('feedbackText').value;
+        if (!content.trim()) return alert("내용을 입력해주세요!");
+        const url = currentEditId ? `/api/feedback/${currentEditId}` : '/api/feedback';
+        const method = currentEditId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: loginUser, content: content })
+        });
+        if ((await res.json()).success) {
+            alert("처리되었습니다.");
+            resetForm();
+            loadMyHistory();
+        }
+    }
+
+    function viewDetail(content) {
+        document.getElementById('modalBody').innerText = content;
+        document.getElementById('viewModal').style.display = 'block';
+    }
+
+    function closeModal() { document.getElementById('viewModal').style.display = 'none'; }
+
+    function initDraggable() {
+        const header = document.getElementById("modalHeader");
+        const content = document.getElementById("modalContent");
+        if(!header) return;
+        let isDragging = false, offset = { x: 0, y: 0 };
+        header.onmousedown = function(e) {
+            isDragging = true;
+            const rect = content.getBoundingClientRect();
+            offset.x = e.clientX - rect.left;
+            offset.y = e.clientY - rect.top;
+            content.style.transform = "none";
+            content.style.left = rect.left + "px";
+            content.style.top = rect.top + "px";
+            document.onmousemove = function(e) {
+                if (isDragging) {
+                    content.style.left = (e.clientX - offset.x) + "px";
+                    content.style.top = (e.clientY - offset.y) + "px";
+                }
+            };
+            document.onmouseup = function() { isDragging = false; document.onmousemove = null; };
+        };
+    }
+</script>
+
+<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+<script>
+(function() {
+    function applyBodyTheme(hour) {
+        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        if (hour >= 6 && hour < 17) {
+            document.body.classList.add('theme-morning');
+        } else if (hour >= 17 && hour < 20) {
+            document.body.classList.add('theme-evening');
+        } else {
+            document.body.classList.add('theme-night');
+        }
+    }
+
+    const canvas = document.getElementById('themeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let currentHour = new Date().getHours();
+    
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initParticles() {
+        particles = [];
+        let count = 0;
+        let isNight = currentHour >= 20 || currentHour < 6;
+        let isEve = currentHour >= 17 && currentHour < 20;
+        let isMorning = currentHour >= 6 && currentHour < 17;
+
+        if (isMorning) count = 80;
+        else if (isEve) count = 50;
+        else count = 120;
+
+        for (let i = 0; i < count; i++) {
+            particles.push(createParticle(isNight, isEve, isMorning));
+        }
+    }
+
+    function createParticle(isNight, isEve, isMorning) {
+        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
+        if (isMorning) {
+            size = Math.random() * 1.5 + 0.5;
+            speedX = (Math.random() - 0.5) * 0.15;
+            speedY = Math.random() * 0.2 + 0.05;
+            color = '255, 255, 255'; 
+            twinkleSpeed = Math.random() * 0.005 + 0.002;
+            maxAlpha = Math.random() * 0.3 + 0.1;
+        } else if (isEve) {
+            size = Math.random() * 2.5 + 1;
+            speedX = Math.random() * 0.3 + 0.1;
+            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
+            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50';
+            twinkleSpeed = Math.random() * 0.01 + 0.005;
+            maxAlpha = Math.random() * 0.6 + 0.2;
+        } else {
+            size = Math.random() * 1.5;
+            speedX = (Math.random() - 0.5) * 0.1;
+            speedY = (Math.random() - 0.5) * 0.1;
+            color = '255, 255, 255';
+            twinkleSpeed = Math.random() * 0.02 + 0.005;
+            maxAlpha = Math.random() * 0.8 + 0.2;
+        }
+        return { 
+            x: Math.random() * width, 
+            y: Math.random() * height, 
+            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
+            alpha: Math.random() * maxAlpha, 
+            alphaDir: Math.random() > 0.5 ? 1 : -1 
+        };
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        let isEve = currentHour >= 17 && currentHour < 20;
+
+        particles.forEach(p => {
+            p.alpha += p.twinkleSpeed * p.alphaDir;
+            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
+            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            
+            if (isEve) {
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    applyBodyTheme(currentHour);
+    initParticles();
+    drawParticles();
+
+    setInterval(() => {
+        let newHour = new Date().getHours();
+        if (newHour !== currentHour) {
+            currentHour = newHour;
+            applyBodyTheme(currentHour);
+            initParticles();
+        }
+    }, 60000);
+})();
+</script>
+</body>
+</html>

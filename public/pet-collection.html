@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <title>Dear Me - 짱구 도감</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+        }
+
+        .collection-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .header-title {
+            text-align: center;
+            color: #0369a1;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 900;
+            text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .header-subtitle {
+            text-align: center;
+            color: #0c4a6e;
+            font-size: 1rem;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        .pokedex-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+        }
+
+        .poke-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+
+        .poke-card:hover {
+            transform: translateY(-8px) scale(1.05);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .poke-card.locked {
+            filter: grayscale(1) opacity(0.5);
+        }
+
+        .poke-card.locked:hover {
+            filter: grayscale(0.5) opacity(0.8);
+        }
+
+        .poke-card.locked .poke-icon svg * {
+            fill: #cbd5e1 !important;
+            stroke: #cbd5e1 !important;
+        }
+
+        .poke-number {
+            font-size: 0.7rem;
+            color: #0369a1;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: rgba(3, 105, 161, 0.1);
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .poke-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .poke-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .poke-name {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+
+        .poke-status {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .status-done {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-lock {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.4;
+            border-radius: 50%;
+        }
+
+        /* 통계 카드 레이아웃 */
+        .collection-stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border: 2.5px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 190px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.85);
+            border-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .stat-icon {
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 800;
+            margin-bottom: 2px;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        #totalCount {
+            color: #0284c7;
+        }
+
+        #collectedCount {
+            color: #16a34a;
+        }
+
+        #remainingCount {
+            color: #ea580c;
+        }
+
+        /* 펫 모달 스타일 (냥코 대전쟁 테마) */
+        .pet-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .pet-modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .pet-modal-content {
+            background: #252422;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pet-modal-overlay.active .pet-modal-content {
+            transform: scale(1);
+        }
+
+        .pet-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .pet-modal-close:hover {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        /* 펫 큰 이미지 뷰 영역 (냥코 대전쟁 스타일 그린 격자) */
+        .pet-modal-view {
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: #6ecea6;
+            background-image:
+                linear-gradient(0deg, transparent 24%, rgba(0, 0, 0, .05) 25%, rgba(0, 0, 0, .05) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, .05) 75%, rgba(0, 0, 0, .05) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(0, 0, 0, .05) 25%, rgba(0, 0, 0, .05) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, .05) 75%, rgba(0, 0, 0, .05) 76%, transparent 77%, transparent);
+            background-size: 30px 30px;
+            border-bottom: 4px solid #1a1a1a;
+        }
+
+        .pet-modal-view svg {
+            width: 160px;
+            height: 160px;
+            filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.15));
+            transition: transform 0.3s ease;
+        }
+
+        .pet-modal-view svg:hover {
+            transform: scale(1.05);
+        }
+
+        /* 진화 단계 선택 버튼 그룹 */
+        .pet-evolution-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px;
+            background: #1e1e1c;
+            border-bottom: 2px solid #111;
+        }
+
+        .pet-evo-btn {
+            background: #2b2b28;
+            border: 2px solid #3d3d3a;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: #888;
+        }
+
+        .pet-evo-btn.active {
+            background: #6ecea6;
+            border-color: #fff;
+            color: #111;
+            box-shadow: 0 0 10px rgba(110, 206, 166, 0.4);
+        }
+
+        .pet-evo-btn.active svg {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .pet-evo-btn svg {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 4px;
+        }
+
+        .pet-evo-label {
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+
+        .pet-evo-btn.active .pet-evo-label {
+            color: #111;
+        }
+
+        /* 상세 스토리 영역 (레트로 다크/우드 스타일) */
+        .pet-story-box {
+            background: #181512;
+            padding: 16px;
+            border: 4px double #8d7a66;
+            margin: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace, 'Outfit', sans-serif;
+        }
+
+        .pet-story-title {
+            color: #e5d1b8;
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed rgba(229, 209, 184, 0.3);
+            padding-bottom: 6px;
+        }
+
+        .pet-story-content {
+            color: #cbbca9;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            min-height: 80px;
+            word-break: keep-all;
+        }
+    
+        /* 짱구 패밀리 이미지 최적화 스타일 */
+        .poke-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .poke-card:hover .poke-icon img {
+            border-color: #cbd5e1;
+            transform: scale(1.05);
+        }
+        .pet-modal-view img {
+            width: 160px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 3.5px solid #1a1a1a;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .pet-modal-view img:hover {
+            transform: scale(1.05);
+        }
+        .pet-evo-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #444;
+        }
+        .pet-evo-btn.active img {
+            border-color: #fff;
+        }
+</style>
+    <script src="/mobile-nav.js" defer></script>
+</head>
+
+<body>
+
+    <script>
+        // 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+        (function () {
+            var h = new Date().getHours();
+            var c = (h >= 6 && h < 17) ? 'theme-morning' : (h >= 17 && h < 20) ? 'theme-evening' : 'theme-night';
+            document.body.classList.add(c);
+        })();
+    </script>
+
+    <div class="bg-blob" style="width: 400px; height: 400px; background: #bae6fd; top: -100px; right: -100px;"></div>
+    <div class="bg-blob" style="width: 300px; height: 300px; background: #e0e7ff; bottom: -50px; left: -50px;"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo" onclick="location.href='/'" style="cursor:pointer;">Dear Me</h1>
+            <ul class="nav-menu">
+                <li><a href="/">메인</a></li>
+                <li><a href="/recommend">명언추천</a></li>
+                <li><a href="/library">명언 보관함</a></li>
+                <li><a href="/pet-collection" style="color: #5c67f2; font-weight: bold;">짱구 도감 🐾</a></li>
+                <li><a href="/mypage">마이페이지</a></li>
+
+                <li class="nav-dropdown">
+                    <a href="/board">익명 게시판</a>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/board">익명 게시판</a></li>
+                        <li><a href="/postbox">위로 우체통 <span id="postboxBadge"
+                                    style="display:none; background:#ff5252; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; margin-left:5px;">N</span></a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li id="menu-logout"><a href="javascript:void(0)" onclick="logout()">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="collection-container">
+        <h2 class="header-title">🐾 CHARACTER COLLECTION</h2>
+        <p class="header-subtitle">성장을 완료한 캐릭터들이 여기에 기록됩니다.</p>
+
+        <!-- 통계 영역 -->
+        <div class="collection-stats-container">
+            <div class="stat-box">
+                <div class="stat-icon">👦</div>
+                <div class="stat-info">
+                    <span class="stat-label">전체 캐릭터 수</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <span class="stat-label">모은 캐릭터 수</span>
+                    <span class="stat-value" id="collectedCount">0</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">❓</div>
+                <div class="stat-info">
+                    <span class="stat-label">남은 캐릭터 수</span>
+                    <span class="stat-value" id="remainingCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pokedex-grid" id="pokedexGrid">
+            <!-- 펫 카드가 여기에 동적으로 추가됨 -->
+        </div>
+    </div>
+
+    <!-- 펫 상세 모달 (냥코 대전쟁 테마) -->
+    <div id="petModal" class="pet-modal-overlay" onclick="handleOverlayClick(event)">
+        <div class="pet-modal-content">
+            <button class="pet-modal-close" onclick="closePetModal()">&times;</button>
+            <div class="pet-modal-view" id="modalView">
+                <!-- 큰 SVG 그래픽 영역 -->
+            </div>
+            <div class="pet-evolution-steps" id="modalEvoSteps">
+                <!-- Lv1 ~ Lv4 선택 영역 -->
+            </div>
+            <div class="pet-story-box">
+                <div class="pet-story-title" id="modalStoryTitle">【 캐릭터 】 ( 분류 )</div>
+                <div class="pet-story-content" id="modalStoryContent">스토리 내용...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ANIMAL_DEFS = {
+            chick: {
+                name: '짱구',
+                icon: '👦',
+                theme: '#ffebee',
+                subType: '떡잎마을 방범대',
+                story: '떡잎마을의 트러블 메이커이자 초코비 매니아.\n귀여운 엉덩이 춤과 액션가면을 무척 좋아한다.'
+            },
+            rabbit: {
+                name: '훈이',
+                icon: '🍙',
+                theme: '#e0f2f1',
+                subType: '떡잎마을 방범대',
+                story: '겁이 많고 눈물이 많지만 누구보다 순수하고 착한 아이.\n주먹밥을 닮은 둥근 머리가 트레이드마크다.'
+            },
+            hamster: {
+                name: '흰둥이',
+                icon: '🐕',
+                theme: '#e3f2fd',
+                subType: '반려동물',
+                story: '짱구네 가족의 똑똑한 반려견. 가끔은 짱구보다 훨씬 의젓하며,\n솜사탕처럼 몸을 말 수 있는 개인기를 가졌다.'
+            },
+            cat: {
+                name: '유리',
+                icon: '🐰',
+                theme: '#fce4ec',
+                subType: '떡잎마을 방범대',
+                story: '리얼 소꿉놀이를 매우 좋아하는 소녀.\n가끔 스트레스를 받으면 토끼 인형에게 분노의 꿀밤을 먹이곤 한다.'
+            },
+            dog: {
+                name: '짱아',
+                icon: '👶',
+                theme: '#fffde7',
+                subType: '짱구 가족',
+                story: '짱구의 여동생이자 보석과 미남을 극도로 좋아하는 아기.\n아직 말은 못 하지만 기어 다니는 속도는 전광석화와 같다.'
+            },
+            maenggu: {
+                name: '신형만',
+                icon: '💼',
+                theme: '#f1f8e9',
+                subType: '짱구 가족',
+                story: '짱구의 자상한 아빠. 떡잎상사의 만년 계장으로 매일 발에 땀이 나도록 일하지만,\n누구보다 가족을 아끼고 사랑하는 든든한 가장이다.'
+            },
+            miso: {
+                name: '옆집 아줌마',
+                icon: '👂',
+                theme: '#fff8e1',
+                subType: '이웃 주민',
+                story: '짱구네 옆집에 사는 친절하고 수다스러운 이웃 아주머니.\n동네 소문에 귀가 밝으며 가끔 짱구네 집에 놀러와 봉미선과 수다를 떤다.'
+            },
+            suji: {
+                name: '수지',
+                icon: '👗',
+                theme: '#fce4ec',
+                subType: '떡잎 유치원',
+                story: '부잣집 아가씨로 도도한 성격이지만, 짱구에게 첫눈에 반한 소녀.\n자신의 경호원인 흑곰을 항상 데리고 다닌다.'
+            },
+            cheolsu: {
+                name: '오수',
+                icon: '📚',
+                theme: '#e3f2fd',
+                subType: '이웃 주민',
+                story: '짱구네 동네에 사는 재수생 형. 떡잎산업대 합격을 목표로 늘 공부하지만,\n가끔 짱구의 방해로 곤욕을 치르기도 하는 친근한 이웃이다.'
+            },
+            miseon: {
+                name: '중성 마녀',
+                icon: '🃏',
+                theme: '#efebe9',
+                subType: '악당',
+                story: '영화에 등장하는 강력한 중성 마녀 콤비 조마와 마카오.\n기묘한 춤과 마술로 짱구 일행을 위협하지만, 결국 정의의 댄스 배틀에서 패한다.'
+            },
+            cheolsu2: {
+                name: '철수',
+                icon: '🎒',
+                theme: '#e3f2fd',
+                subType: '떡잎마을 방범대',
+                story: '떡잎마을의 엘리트이자 잘난 체하기 좋아하는 모범생.\n학원 공부로 늘 바쁘지만 떡잎마을 방범대의 소중한 친구이며, 마법소녀 모에삐를 몰래 좋아한다.'
+            },
+            maenggu2: {
+                name: '맹구',
+                icon: '🪨',
+                theme: '#f1f8e9',
+                subType: '떡잎마을 방범대',
+                story: '항상 조용하고 느긋하게 말을 하지만 은근히 통찰력이 뛰어난 아이.\n독특한 모양의 돌을 수집하는 것을 아주 사랑한다.'
+            },
+            miseon2: {
+                name: '봉미선',
+                icon: '👩',
+                theme: '#efebe9',
+                subType: '짱구 가족',
+                story: '짱구와 짱아의 강인한 엄마. 매일 말썽을 피우는 짱구 때문에 잔소리가 끊이지 않지만,\n가족을 누구보다 극진히 사랑하는 따뜻한 어머니이다.'
+            },
+            miso2: {
+                name: '봉미소',
+                icon: '📷',
+                theme: '#fff8e1',
+                subType: '짱구 가족',
+                story: '봉미선의 여동생이자 짱구의 이모. 사진작가를 꿈꾸고 있으며,\n조금 게으른 면도 있지만 늘 유쾌하고 다정한 성격을 지녔다.'
+            },
+            namiri: {
+                name: '나미리 선생님',
+                icon: '👠',
+                theme: '#fce4ec',
+                subType: '장미반 선생님',
+                story: '떡잎유치원 장미반 선생님. 겉으로는 도도하고 명품을 좋아하지만,\n사실은 아이들을 무척 아끼고 정 많은 선생님이다.'
+            },
+            chaesonghwa: {
+                name: '채송화 선생님',
+                icon: '🌻',
+                theme: '#fffde7',
+                subType: '해바라기반 선생님',
+                story: '떡잎유치원 해바라기반 선생님. 늘 상냥하고 다정하며,\n짱구의 엉뚱한 행동도 따뜻하게 받아주는 훌륭한 선생님이다.'
+            },
+            dumok: {
+                name: '원장 선생님',
+                icon: '😎',
+                theme: '#efebe9',
+                subType: '원장 선생님',
+                story: '떡잎유치원 원장 선생님. 험악한 인상 때문에 자주 오해를 받지만,\n누구보다 순수하고 마음 여린 원장 선생님이다.'
+            },
+            rose: {
+                name: '붉은장미삼총사',
+                icon: '🌹',
+                theme: '#ffebee',
+                subType: '불량 여고생',
+                story: '떡잎마을의 불량 여고생 3인조(용혜, 은혜, 지혜).\n무서운 척하지만 매번 짱구의 페이스에 휘말려 개그 캐릭터가 된다.'
+            },
+            buriburi: {
+                name: '부리부리몬',
+                icon: '🐷',
+                theme: '#fff8e1',
+                subType: '구국의 영웅',
+                story: '짱구가 그린 돼지 캐릭터이자 구국의 영웅.\n늘 정의의 편을 들지만, 돈을 주면 언제든 악당 편으로 배신할 준비가 되어 있다.'
+            },
+            couple: {
+                name: '닭살커플',
+                icon: '💕',
+                theme: '#fce4ec',
+                subType: '이웃 주민',
+                story: '짱구네 이웃에 사는 염장 지르기 전문 부부 요시린과 밋치.\n시도 때도 없이 애정행각을 벌이며 짱구네 집에 자주 들이닥친다.'
+            },
+            heukgom: {
+                name: '흑곰',
+                icon: '🕶️',
+                theme: '#efebe9',
+                subType: '경호원',
+                story: '수지의 충직한 보디가드. 수지의 모든 무리한 요구를 들어주며,\n늘 선글라스를 끼고 뒤를 지키는 유능한 경호원이다.'
+            },
+            gaydriver: {
+                name: '게이 드라이버',
+                icon: '🚗',
+                theme: '#e0f2f1',
+                subType: '악당',
+                story: '짱구 극장판 \'태풍을 부르는 영광의 불고기 로드\'에 등장하는 드라이버 형.\n불고기를 먹기 위해 도망치는 짱구 아빠에게 반해 도와준다.'
+            }
+        };
+
+        const PET_SVGS = {
+            chick: [
+                `<img src="/짱구 등장인물/짱구 갓난아기.jpg" />`,
+                `<img src="/짱구 등장인물/ㄱ짱구.jpg" />`,
+                `<img src="/짱구 등장인물/청소년기 짱구.JPG" />`,
+                `<img src="/짱구 등장인물/짱구 어른버전.jpg" />`
+            ],
+            rabbit: [
+                `<img src="/짱구 등장인물/훈이 갓난아기.JPG" />`,
+                `<img src="/짱구 등장인물/훈이.jpg" />`,
+                `<img src="/짱구 등장인물/훈이 청소년기.jpg" />`,
+                `<img src="/짱구 등장인물/훈이 성인버전.jpg" />`
+            ],
+            hamster: [
+                `<img src="/짱구 등장인물/흰둥이.jpg" />`,
+                `<img src="/짱구 등장인물/흰둥이 배긁어.jpg" />`,
+                `<img src="/짱구 등장인물/흰둥이 헤벌레.jpg" />`,
+                `<img src="/짱구 등장인물/몸짱흰둥이.jpg" />`
+            ],
+            cat: [
+                `<img src="/짱구 등장인물/유리 갓난아기.JPG" />`,
+                `<img src="/짱구 등장인물/유리.jpg" />`,
+                `<img src="/짱구 등장인물/청소년기 유리.jpg" />`,
+                `<img src="/짱구 등장인물/유리 성인버전.jpg" />`
+            ],
+            dog: [
+                `<img src="/짱구 등장인물/ㄷ짱아.jpg" />`,
+                `<img src="/짱구 등장인물/짱아 심술.jpg" />`,
+                `<img src="/짱구 등장인물/짱아 밥.jpg" />`,
+                `<img src="/짱구 등장인물/짱아 어른버전.jpg" />`
+            ],
+            maenggu: [
+                `<img src="/짱구 등장인물/신형만 어린이버전.jpg" />`,
+                `<img src="/짱구 등장인물/신형만확대샷.jpg" />`,
+                `<img src="/짱구 등장인물/발냄새 신형만.jpg" />`,
+                `<img src="/짱구 등장인물/ㅋ신형만.jpg" />`
+            ],
+            miso: [
+                `<img src="/짱구 등장인물/옆집아주머니.JPG" />`,
+                `<img src="/짱구 등장인물/옆집아주머니 귓속말.jpg" />`,
+                `<img src="/짱구 등장인물/옆집아주머니 하마.jpg" />`,
+                `<img src="/짱구 등장인물/ㅎ옆집아주머니.jpg" />`
+            ],
+            suji: [
+                `<img src="/짱구 등장인물/수지 병맛.JPG" />`,
+                `<img src="/짱구 등장인물/수지 방울옷.jpg" />`,
+                `<img src="/짱구 등장인물/수지 고데기.jpg" />`,
+                `<img src="/짱구 등장인물/수지.jpg" />`
+            ],
+            cheolsu: [
+                `<img src="/짱구 등장인물/오수.jpg" />`,
+                `<img src="/짱구 등장인물/오수1.jpg" />`,
+                `<img src="/짱구 등장인물/오수2.jpg" />`,
+                `<img src="/짱구 등장인물/오수3.jpg" />`
+            ],
+            miseon: [
+                `<img src="/짱구 등장인물/중성마녀.jpg" />`,
+                `<img src="/짱구 등장인물/중성마녀2.jpg" />`,
+                `<img src="/짱구 등장인물/중성마녀3.jpg" />`,
+                `<img src="/짱구 등장인물/중성마녀4.jpg" />`
+            ],
+            cheolsu2: [
+                `<img src="/짱구 등장인물/철수 갓난아기.JPG" />`,
+                `<img src="/짱구 등장인물/철수.jpg" />`,
+                `<img src="/짱구 등장인물/청소년기 철수.JPG" />`,
+                `<img src="/짱구 등장인물/철수 성인버전.jpg" />`
+            ],
+            maenggu2: [
+                `<img src="/짱구 등장인물/맹구 갓난아기.jpg" />`,
+                `<img src="/짱구 등장인물/맹구.jpg" />`,
+                `<img src="/짱구 등장인물/맹구 청소년기.jpg" />`,
+                `<img src="/짱구 등장인물/맹구 성인버전.jpg" />`
+            ],
+            miseon2: [
+                `<img src="/짱구 등장인물/봉미선 우.jpg" />`,
+                `<img src="/짱구 등장인물/봉미선 뚱뚱.jpg" />`,
+                `<img src="/짱구 등장인물/머리쥐어박는 봉미선.jpg" />`,
+                `<img src="/짱구 등장인물/봉미선 쎄드.jpg" />`
+            ],
+            miso2: [
+                `<img src="/짱구 등장인물/봉미소 어린이.jpg" />`,
+                `<img src="/짱구 등장인물/봉미소 욕심쟁이.jpg" />`,
+                `<img src="/짱구 등장인물/카메라 찍는 봉미소.jpg" />`,
+                `<img src="/짱구 등장인물/봉미소.jpg" />`
+            ],
+            namiri: [
+                `<img src="/짱구 등장인물/나미리쌤 만취.jpg" />`,
+                `<img src="/짱구 등장인물/나미리쌤 어부.jpg" />`,
+                `<img src="/짱구 등장인물/나미리쌤 여왕.jpg" />`,
+                `<img src="/짱구 등장인물/나미리선생님.jpg" />`
+            ],
+            chaesonghwa: [
+                `<img src="/짱구 등장인물/채송화선생님.jpg" />`,
+                `<img src="/짱구 등장인물/채송화선생님2.jpg" />`,
+                `<img src="/짱구 등장인물/채송화선생님3.jpg" />`,
+                `<img src="/짱구 등장인물/채송화선생님4.jpg" />`
+            ],
+            dumok: [
+                `<img src="/짱구 등장인물/두목님 어린이.jpg" />`,
+                `<img src="/짱구 등장인물/두목님 피곤.JPG" />`,
+                `<img src="/짱구 등장인물/두목님몸짱.JPG" />`,
+                `<img src="/짱구 등장인물/두목님.jpg" />`
+            ],
+            rose: [
+                `<img src="/짱구 등장인물/붉은장미삼총사 (2).jpg" />`,
+                `<img src="/짱구 등장인물/붉은장미삼총사알바.jpg" />`,
+                `<img src="/짱구 등장인물/붉은장미삼총사메이드.jpg" />`,
+                `<img src="/짱구 등장인물/붉은장미삼총사.jpg" />`
+            ],
+            buriburi: [
+                `<img src="/짱구 등장인물/부리부리몬 소녀.jpg" />`,
+                `<img src="/짱구 등장인물/부리부리몬 양아치.jpg" />`,
+                `<img src="/짱구 등장인물/부리부리몬 형사.jpg" />`,
+                `<img src="/짱구 등장인물/부리부리몬대왕.jpg" />`
+            ],
+            couple: [
+                `<img src="/짱구 등장인물/닭살커플1.jpg" />`,
+                `<img src="/짱구 등장인물/닭살커플싸움.jpg" />`,
+                `<img src="/짱구 등장인물/닭살커플 사랑.jpg" />`,
+                `<img src="/짱구 등장인물/ㅜ닭살커플.jpg" />`
+            ],
+            heukgom: [
+                `<img src="/짱구 등장인물/흑곰.jpg" />`,
+                `<img src="/짱구 등장인물/흑곰2.jpg" />`,
+                `<img src="/짱구 등장인물/흑곰3.jpg" />`,
+                `<img src="/짱구 등장인물/흑곰4.jpg" />`
+            ],
+            gaydriver: [
+                `<img src="/짱구 등장인물/게이드라이버.jpg" />`,
+                `<img src="/짱구 등장인물/게이드라이버2.jpg" />`,
+                `<img src="/짱구 등장인물/게이드라이버3.jpg" />`,
+                `<img src="/짱구 등장인물/게이드라이버4.jpg" />`
+            ]
+        };
+
+        const loginUser = sessionStorage.getItem('loginUser');
+
+        async function initPokedex() {
+            if (!loginUser) {
+                alert("로그인이 필요합니다.");
+                location.href = "/login";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/pet/completed/${encodeURIComponent(loginUser)}`);
+                const data = await res.json();
+                const completedTypes = data.completed || [];
+
+                renderPokedex(completedTypes);
+            } catch (e) {
+                console.error(e);
+                renderPokedex([]);
+            }
+        }
+
+        function renderPokedex(completedTypes) {
+            const grid = document.getElementById('pokedexGrid');
+            grid.innerHTML = '';
+
+            const types = Object.keys(ANIMAL_DEFS);
+            const totalAnimals = types.length;
+            const uniqueCompleted = [...new Set(completedTypes)].filter(type => types.includes(type));
+            const collectedCount = uniqueCompleted.length;
+            const remainingCount = totalAnimals - collectedCount;
+
+            document.getElementById('totalCount').textContent = totalAnimals;
+            document.getElementById('collectedCount').textContent = collectedCount;
+            document.getElementById('remainingCount').textContent = remainingCount;
+            types.forEach((type, index) => {
+                const def = ANIMAL_DEFS[type];
+                const isCompleted = completedTypes.includes(type);
+                const number = (index + 1).toString().padStart(3, '0');
+
+                const card = document.createElement('div');
+                card.className = `poke-card ${isCompleted ? 'completed' : 'locked'}`;
+
+                // 마지막 단계 SVG (졸업 모습)
+                const svgCode = PET_SVGS[type][3];
+
+                card.innerHTML = `
+                    <div class="poke-number">#${number}</div>
+                    <div class="poke-icon">${svgCode}</div>
+                    <div class="poke-name">${def.name}</div>
+                    <div class="poke-status ${isCompleted ? 'status-done' : 'status-lock'}">
+                        ${isCompleted ? '성장 완료' : '미발견'}
+                    </div>
+                `;
+
+                // 클릭 시 모달 오픈 혹은 미발견 알림
+                card.onclick = () => {
+                    if (isCompleted) {
+                        openPetModal(type);
+                    } else {
+                        alert("아직 발견하지 못한 캐릭터입니다. 끝까지 성장시켜 도감을 잠금 해제해 보세요!");
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        // 모달 상태 제어 변수
+        let activePetType = null;
+        let activeStage = 3; // 기본 Lv.4 (마지막 단계)
+
+        function openPetModal(type) {
+            activePetType = type;
+            activeStage = 3; // 기본적으로 Lv.4 단계로 모달 열기
+
+            const modal = document.getElementById('petModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+
+            renderModalContent();
+        }
+
+        function closePetModal() {
+            const modal = document.getElementById('petModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function handleOverlayClick(event) {
+            if (event.target.id === 'petModal') {
+                closePetModal();
+            }
+        }
+
+        function changeModalStage(stageIndex) {
+            activeStage = stageIndex;
+            renderModalContent();
+        }
+
+        function renderModalContent() {
+            if (!activePetType) return;
+            const def = ANIMAL_DEFS[activePetType];
+            const svgs = PET_SVGS[activePetType];
+
+            // 1. 대형 뷰포트에 현재 단계 SVG 출력
+            const view = document.getElementById('modalView');
+            view.innerHTML = svgs[activeStage];
+
+            // 2. 진화 단계 버튼들 목록 구성
+            const steps = document.getElementById('modalEvoSteps');
+            steps.innerHTML = '';
+
+            const stageLabels = ["Lv.1 베이비", "Lv.2 성장기", "Lv.3 청소년기", "Lv.4 졸업형태"];
+            for (let i = 0; i < 4; i++) {
+                const btn = document.createElement('button');
+                btn.className = `pet-evo-btn ${i === activeStage ? 'active' : ''}`;
+                btn.onclick = () => changeModalStage(i);
+
+                btn.innerHTML = `
+                    <div style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; transform:scale(0.8);">${svgs[i]}</div>
+                    <span class="pet-evo-label">${stageLabels[i]}</span>
+                `;
+                steps.appendChild(btn);
+            }
+
+            // 3. 스토리/소개글 출력
+            const storyTitle = document.getElementById('modalStoryTitle');
+            const storyContent = document.getElementById('modalStoryContent');
+
+            storyTitle.textContent = `【 ${def.name} 】 ( ${def.subType || '캐릭터'} )`;
+            storyContent.innerHTML = (def.story || '상세 소개글이 아직 구성되지 않았습니다.').replace(/\n/g, '<br>');
+        }
+
+        initPokedex();
+
+        function logout() {
+            sessionStorage.clear();
+            location.href = '/login';
+        }
+    </script>
+</body>
+
+</html>

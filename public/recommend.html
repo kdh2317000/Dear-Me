@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#5c67f2">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <title>Dear Me - 명언 추천</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 중앙 컨텐츠 박스 레이아웃 통일 */
+        .container { 
+            max-width: 800px; 
+            margin: 50px auto !important; /* 위아래 50px 간격 통일 */
+            padding: 50px 40px; 
+            background: white;
+            border-radius: 30px; 
+            border: 3px solid #5c67f2; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* 감정 버튼 그리드 */
+        .emotion-btns { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+            margin: 25px auto; 
+            max-width: 600px; 
+        }
+
+        .e-btn { 
+            padding: 12px; 
+            border: none; 
+            border-radius: 15px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            font-size: 0.9rem; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+
+        .e-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* 감정 색상 테마 */
+        .joy { background:#fff176; color:#f57f17; } 
+        .sad { background:#bbdefb; color:#0d47a1; }
+        .worry-btn { background:#d1c4e9; color:#4527a0; } 
+        .anger { background:#ffcdd2; color:#b71c1c; }
+        .lonely { background:#e1f5fe; color:#01579b; } 
+        .lethargy { background:#f5f5f5; color:#424242; }
+        .anxiety { background:#e8f5e9; color:#1b5e20; } 
+        .flutter { background:#fce4ec; color:#d81b60; }
+        
+        /* 명언 표시 영역 */
+        .quote-display { 
+            background:#fcfcff; 
+            padding:80px 40px; 
+            border-radius:20px; 
+            border:1px dashed #5c67f2; 
+            min-height:200px; 
+            margin-top:30px; 
+            position:relative; 
+            text-align:center; 
+        }
+        
+        /* 하트 버튼 스타일 */
+        #heartIcon {
+            position: absolute; 
+            top: 15px; 
+            right: 20px;
+            background: white !important;
+            border: 1px solid #eee !important;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: #ccc; 
+            cursor: pointer !important; 
+            transition: all 0.3s ease;
+            display: none; 
+            z-index: 100;
+            width: 60px; 
+            height: 60px;
+            line-height: 60px; 
+            padding: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #heartIcon.liked { color: #f44336 !important; transform: scale(1.1); border-color: #f44336 !important; }
+
+        /* 사운드 토글 버튼 스타일 */
+        .sound-toggle-btn {
+            position: absolute; 
+            top: 15px; 
+            left: 20px;
+            background: white !important;
+            border: 1px solid #eee !important;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            color: #5c67f2; 
+            cursor: pointer !important; 
+            transition: all 0.3s ease;
+            z-index: 100;
+            width: 60px; 
+            height: 60px;
+            line-height: 56px; 
+            padding: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sound-toggle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .sound-toggle-btn.muted {
+            color: #aaa;
+        }
+
+        /* 등록 박스 */
+        .registration-box { 
+            margin-top:50px; 
+            padding:30px; 
+            background:#fdfdfd; 
+            border-radius:20px; 
+            border:1px solid #eee; 
+            text-align:center; 
+        }
+        
+        .registration-box h3 { margin-bottom: 20px; color: #333; }
+
+        .registration-box input, 
+        .registration-box select { 
+            padding:12px; 
+            margin:5px; 
+            border-radius:8px; 
+            border:1px solid #ddd; 
+            font-family: inherit;
+        }
+
+        .reg-btn { 
+            background:#5c67f2; 
+            color:white; 
+            border:none; 
+            padding:12px 30px; 
+            border-radius:8px; 
+            cursor:pointer; 
+            font-weight:bold; 
+            transition: background 0.3s;
+        }
+        
+        .reg-btn:hover { background: #4a54d1; }
+
+        @media (max-width: 600px) {
+            .emotion-btns { grid-template-columns: repeat(2, 1fr); }
+            .registration-box input { width: 100% !important; margin: 5px 0; }
+        }
+    </style>
+    <script src="/mobile-nav.js" defer></script>
+</head>
+<body>
+
+<script>
+// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
+(function(){
+    var h = new Date().getHours();
+    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
+    document.body.classList.add(c);
+})();
+</script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo" onclick="location.href='/'" style="cursor:pointer;">Dear Me</h1>
+            <ul class="nav-menu">
+                <li><a href="/">메인</a></li>
+                <li><a href="/recommend" style="color: #5c67f2; font-weight: bold;">명언추천</a></li>
+                <li><a href="/library">명언 보관함</a></li>
+                <li><a href="/pet-collection">짱구 도감 🐾</a></li>
+                <li><a href="/mypage">마이페이지</a></li>
+                
+                <li class="nav-dropdown">
+                    <a href="/board">익명 게시판</a>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/board">익명 게시판</a></li>
+                        <li><a href="/postbox">위로 우체통 <span id="postboxBadge" style="display:none; background:#ff5252; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; margin-left:5px;">N</span></a></li>
+                    </ul>
+                </li>
+                <li id="menu-login"><a href="/login">로그인</a></li>
+                <li id="menu-logout" style="display:none;"><a href="javascript:void(0)" id="logoutBtn">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>지금 당신의 감정을 들려주세요</h2>
+        <div class="emotion-btns">
+            <button onclick="loadQuote('joy')" class="e-btn joy">기쁨 😊</button>
+            <button onclick="loadQuote('sadness')" class="e-btn sad">슬픔 😭</button>
+            <button onclick="loadQuote('worry')" class="e-btn worry-btn">고민 😟</button>
+            <button onclick="loadQuote('anger')" class="e-btn anger">화남 😡</button>
+            <button onclick="loadQuote('lonely')" class="e-btn lonely">외로움 👤</button>
+            <button onclick="loadQuote('lethargy')" class="e-btn lethargy">무기력 😴</button>
+            <button onclick="loadQuote('anxiety')" class="e-btn anxiety">불안 😰</button>
+            <button onclick="loadQuote('flutter')" class="e-btn flutter">설렘 💕</button>
+        </div>
+
+        <div class="quote-display" style="transition: background 0.5s ease, border-color 0.5s ease; min-height: 200px; padding: 80px 40px; border-radius: 20px; border: 1px dashed #5c67f2; margin-top: 30px; position: relative; text-align: center;">
+            <button id="heartIcon" title="보관함에 저장">♥</button>
+            <button id="soundToggleBtn" title="소리 켜기/끄기" class="sound-toggle-btn">🔊</button>
+            <h2 id="daily-quote" style="transition: color 0.5s ease, text-shadow 0.5s ease; font-size: 2rem; line-height: 1.4; color: #333; margin-bottom: 10px;">"오늘의 마음을 선택해 보세요."</h2>
+            <p id="author" style="transition: color 0.5s ease; font-size: 1.2rem; font-weight: 600; color: #555;">- Read US -</p>
+        </div>
+
+        <div class="registration-box">
+            <h3>✨ 나만의 명언 등록하기</h3>
+            <select id="reg-emotion">
+                <option value="joy">기쁨 😊</option>
+                <option value="sadness">슬픔 😭</option>
+                <option value="worry">고민 😟</option>
+                <option value="anger">화남 😡</option>
+                <option value="lonely">외로움 👤</option>
+                <option value="lethargy">무기력 😴</option>
+                <option value="anxiety">불안 😰</option>
+                <option value="flutter">설렘 💕</option>
+            </select>
+            <input type="text" id="reg-text" placeholder="마음을 울리는 문장을 입력하세요" style="width: 50%;">
+            <input type="text" id="reg-author" placeholder="작성자" style="width: 15%;">
+            <button onclick="registerQuote()" class="reg-btn">등록하기</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. 오디오 컨텍스트 및 볼륨 관리
+        let isMuted = localStorage.getItem('isMuted') === 'true';
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playBellTone(freq, startTime, duration, volume=0.1) {
+            try {
+                if (isMuted) return;
+                const ctx = getAudioContext();
+                
+                // 기본음 (sine wave)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(freq, startTime);
+                gain1.gain.setValueAtTime(volume, startTime);
+                gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(startTime);
+                osc1.stop(startTime + duration);
+
+                // 배음 (triangle wave) - 은은한 종소리/오르골 소리 연출
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(freq * 2, startTime);
+                gain2.gain.setValueAtTime(volume * 0.3, startTime);
+                gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.5);
+                
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(startTime);
+                osc2.stop(startTime + duration * 0.5);
+            } catch (err) {
+                console.error("오디오 재생 실패:", err);
+            }
+        }
+
+        function playEmotionMelody(emotion) {
+            try {
+                if (isMuted) return;
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                switch (emotion) {
+                    case 'joy':
+                        playBellTone(523.25, now, 0.6, 0.1);
+                        playBellTone(659.25, now + 0.15, 0.6, 0.1);
+                        playBellTone(783.99, now + 0.3, 0.6, 0.1);
+                        playBellTone(880.00, now + 0.45, 0.6, 0.1);
+                        playBellTone(1046.50, now + 0.6, 0.8, 0.1);
+                        break;
+                    case 'sadness':
+                        playBellTone(220.00, now, 1.5, 0.08);
+                        playBellTone(261.63, now + 0.4, 1.5, 0.08);
+                        playBellTone(329.63, now + 0.8, 1.5, 0.08);
+                        playBellTone(440.00, now + 1.2, 2.0, 0.08);
+                        break;
+                    case 'worry':
+                        playBellTone(293.66, now, 1.2, 0.1);
+                        playBellTone(440.00, now + 0.3, 1.2, 0.1);
+                        playBellTone(659.25, now + 0.6, 1.8, 0.1);
+                        break;
+                    case 'anger':
+                        playBellTone(196.00, now, 1.5, 0.12);
+                        playBellTone(293.66, now + 0.2, 1.5, 0.12);
+                        playBellTone(392.00, now + 0.4, 1.5, 0.12);
+                        playBellTone(493.88, now + 0.6, 2.0, 0.12);
+                        break;
+                    case 'lonely':
+                        playBellTone(659.25, now, 2.5, 0.08);
+                        playBellTone(987.77, now + 1.0, 2.5, 0.06);
+                        break;
+                    case 'lethargy':
+                        playBellTone(349.23, now, 2.0, 0.09);
+                        playBellTone(523.25, now + 0.5, 2.0, 0.09);
+                        break;
+                    case 'anxiety':
+                        playBellTone(220.00, now, 2.0, 0.08);
+                        playBellTone(329.63, now + 0.6, 2.0, 0.08);
+                        playBellTone(440.00, now + 1.2, 2.0, 0.08);
+                        break;
+                    case 'flutter':
+                        playBellTone(698.46, now, 0.5, 0.1);
+                        playBellTone(880.00, now + 0.12, 0.5, 0.1);
+                        playBellTone(1046.50, now + 0.24, 0.5, 0.1);
+                        playBellTone(1396.91, now + 0.36, 0.8, 0.1);
+                        break;
+                }
+            } catch (err) {
+                console.error("멜로디 재생 오류:", err);
+            }
+        }
+
+        // 2. 테마 그라데이션 리스트
+        const emotionGradients = {
+            joy: [
+                { bg: 'linear-gradient(135deg, #FFF9C4 0%, #FFE082 50%, #FFD54F 100%)', text: '#d84315', shadow: 'rgba(255, 255, 255, 0.8)', border: '#FFB300' },
+                { bg: 'linear-gradient(135deg, #FFFDE7 0%, #FFF59D 60%, #FFF176 100%)', text: '#e65100', shadow: 'rgba(255, 255, 255, 0.8)', border: '#FBC02D' },
+                { bg: 'linear-gradient(135deg, #FFF9C4 0%, #FFD54F 60%, #FFCA28 100%)', text: '#c62828', shadow: 'rgba(255, 255, 255, 0.8)', border: '#FFA000' }
+            ],
+            sadness: [
+                { bg: 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%)', text: '#0d47a1', shadow: 'rgba(255, 255, 255, 0.8)', border: '#42A5F5' },
+                { bg: 'linear-gradient(135deg, #ECEFF1 0%, #CFD8DC 60%, #90A4AE 100%)', text: '#263238', shadow: 'rgba(255, 255, 255, 0.8)', border: '#78909C' },
+                { bg: 'linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 50%, #9FA8DA 100%)', text: '#1a237e', shadow: 'rgba(255, 255, 255, 0.8)', border: '#7986CB' }
+            ],
+            worry: [
+                { bg: 'linear-gradient(135deg, #EDE7F6 0%, #D1C4E9 50%, #B39DDB 100%)', text: '#4527a0', shadow: 'rgba(255, 255, 255, 0.8)', border: '#9575CD' },
+                { bg: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 60%, #CE93D8 100%)', text: '#4a148c', shadow: 'rgba(255, 255, 255, 0.8)', border: '#BA68C8' },
+                { bg: 'linear-gradient(135deg, #ECEFF1 0%, #D5D6EA 50%, #B0B3DF 100%)', text: '#282b5c', shadow: 'rgba(255, 255, 255, 0.8)', border: '#7E84C2' }
+            ],
+            anger: [
+                { bg: 'linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 50%, #EF9A9A 100%)', text: '#b71c1c', shadow: 'rgba(255, 255, 255, 0.8)', border: '#E57373' },
+                { bg: 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 60%, #FFCC80 100%)', text: '#e65100', shadow: 'rgba(255, 255, 255, 0.8)', border: '#FFA726' },
+                { bg: 'linear-gradient(135deg, #FFEBEE 0%, #EF9A9A 50%, #E57373 100%)', text: '#7f0000', shadow: 'rgba(255, 255, 255, 0.8)', border: '#EF5350' }
+            ],
+            lonely: [
+                { bg: 'linear-gradient(135deg, #E1F5FE 0%, #B3E5FC 50%, #81D4FA 100%)', text: '#01579b', shadow: 'rgba(255, 255, 255, 0.8)', border: '#4FC3F7' },
+                { bg: 'linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 60%, #BDBDBD 100%)', text: '#212121', shadow: 'rgba(255, 255, 255, 0.8)', border: '#9E9E9E' },
+                { bg: 'linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 50%, #80DEEA 100%)', text: '#006064', shadow: 'rgba(255, 255, 255, 0.8)', border: '#4DD0E1' }
+            ],
+            lethargy: [
+                { bg: 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 50%, #EEEEEE 100%)', text: '#424242', shadow: 'rgba(255, 255, 255, 0.8)', border: '#CCCCCC' },
+                { bg: 'linear-gradient(135deg, #EFEBE9 0%, #D7CCC8 60%, #BCAAA4 100%)', text: '#4e342e', shadow: 'rgba(255, 255, 255, 0.8)', border: '#A1887F' },
+                { bg: 'linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 50%, #CCCCCC 100%)', text: '#333333', shadow: 'rgba(255, 255, 255, 0.8)', border: '#9E9E9E' }
+            ],
+            anxiety: [
+                { bg: 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%)', text: '#1b5e20', shadow: 'rgba(255, 255, 255, 0.8)', border: '#81C784' },
+                { bg: 'linear-gradient(135deg, #F1F8E9 0%, #DCEDC8 60%, #C5E1A5 100%)', text: '#33691e', shadow: 'rgba(255, 255, 255, 0.8)', border: '#AED581' },
+                { bg: 'linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 50%, #80CBC4 100%)', text: '#004d40', shadow: 'rgba(255, 255, 255, 0.8)', border: '#4DB6AC' }
+            ],
+            flutter: [
+                { bg: 'linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 50%, #F48FB1 100%)', text: '#c2185b', shadow: 'rgba(255, 255, 255, 0.8)', border: '#F06292' },
+                { bg: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 60%, #FFC0CB 100%)', text: '#b03060', shadow: 'rgba(255, 255, 255, 0.8)', border: '#FF8DA1' },
+                { bg: 'linear-gradient(135deg, #FCE4EC 0%, #F48FB1 50%, #F06292 100%)', text: '#880e4f', shadow: 'rgba(255, 255, 255, 0.8)', border: '#E91E63' }
+            ]
+        };
+
+        const loginUser = sessionStorage.getItem('loginUser');
+        const heartBtn = document.getElementById('heartIcon');
+        const soundBtn = document.getElementById('soundToggleBtn');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (loginUser) {
+                document.getElementById('menu-login').style.display = 'none';
+                document.getElementById('menu-logout').style.display = 'block';
+                
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    if (confirm("정말 로그아웃 하시겠습니까?")) {
+                        sessionStorage.removeItem('loginUser');
+                        location.href = "/";
+                    }
+                });
+            }
+
+            // 사운드 버튼 초기상태 설정
+            if (soundBtn) {
+                if (isMuted) {
+                    soundBtn.innerText = '🔇';
+                    soundBtn.classList.add('muted');
+                } else {
+                    soundBtn.innerText = '🔊';
+                    soundBtn.classList.remove('muted');
+                }
+
+                soundBtn.addEventListener('click', () => {
+                    isMuted = !isMuted;
+                    localStorage.setItem('isMuted', isMuted);
+                    if (isMuted) {
+                        soundBtn.innerText = '🔇';
+                        soundBtn.classList.add('muted');
+                    } else {
+                        soundBtn.innerText = '🔊';
+                        soundBtn.classList.remove('muted');
+                        // 켜자마자 테스트 오디오 한 번 재생하여 유저 터치 이벤트 충족시킴
+                        const ctx = getAudioContext();
+                    }
+                });
+            }
+
+            heartBtn.addEventListener('click', handleHeartClick);
+        });
+
+        async function loadQuote(emotion) {
+            try {
+                const res = await fetch(`/api/random-quote?emotion=${emotion}`);
+                const data = await res.json();
+                
+                document.getElementById('daily-quote').innerText = `"${data.text}"`;
+                document.getElementById('author').innerText = `- ${data.author} -`;
+                
+                // 감정별 랜덤 테마 그라데이션 적용
+                const themes = emotionGradients[emotion];
+                if (themes && themes.length > 0) {
+                    const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+                    const displayBox = document.querySelector('.quote-display');
+                    const quoteText = document.getElementById('daily-quote');
+                    const authorText = document.getElementById('author');
+                    
+                    if (displayBox) {
+                        displayBox.style.background = randomTheme.bg;
+                        displayBox.style.borderColor = randomTheme.border;
+                    }
+                    if (quoteText) {
+                        quoteText.style.color = randomTheme.text;
+                        quoteText.style.textShadow = `1px 1px 2px ${randomTheme.shadow}`;
+                    }
+                    if (authorText) {
+                        authorText.style.color = randomTheme.text;
+                    }
+                }
+
+                // 멜로디 재생
+                playEmotionMelody(emotion);
+                
+                if (loginUser) {
+                    heartBtn.style.display = 'block';
+                    
+                    // 이미 찜했는지 여부 서버에 조회
+                    const checkRes = await fetch(`/api/is-saved-quote?username=${encodeURIComponent(loginUser)}&text=${encodeURIComponent(data.text)}`);
+                    const checkData = await checkRes.json();
+                    
+                    if (checkData.saved) {
+                        heartBtn.classList.add('liked');
+                    } else {
+                        heartBtn.classList.remove('liked');
+                    }
+                }
+            } catch (err) {
+                console.error("데이터 로드 실패:", err);
+                alert("명언을 불러오는 중 오류가 발생했습니다.");
+            }
+        }
+
+        async function handleHeartClick() {
+            if(!loginUser) return alert("로그인이 필요합니다!");
+
+            const text = document.getElementById('daily-quote').innerText.replace(/"/g, "");
+            const author = document.getElementById('author').innerText.replace(/- /g, "").replace(/ -/g, "");
+
+            try {
+                if(heartBtn.classList.contains('liked')) {
+                    const res = await fetch('/api/remove-from-library', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: loginUser, text: text })
+                    });
+                    if((await res.json()).success) {
+                        heartBtn.classList.remove('liked');
+                    }
+                } else {
+                    const res = await fetch('/api/save-to-library', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: loginUser, text: text, author: author })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        heartBtn.classList.add('liked');
+                        alert("보관함에 저장되었습니다! ⭐");
+                        try {
+                            const expRes = await fetch('/api/pet/gain-exp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ username: loginUser, activity: 'quote' })
+                            });
+                            const expData = await expRes.json();
+                            if (expData.success) {
+                                showExpToast(expData.gainedExp || 3);
+                                if (expData.leveledUp) {
+                                    setTimeout(() => {
+                                        alert(`🎉 축하합니다! 펫이 Lv.${expData.newLevel}(으)로 레벨업했습니다! 마이페이지에서 확인해보세요.`);
+                                    }, 1000);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("EXP 획득 실패:", e);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("보관함 처리 실패:", err);
+            }
+        }
+
+        async function registerQuote() {
+            const emotion = document.getElementById('reg-emotion').value;
+            const text = document.getElementById('reg-text').value;
+            const author = document.getElementById('reg-author').value || loginUser || '익명';
+            
+            if(!text.trim()) return alert("내용을 입력해 주세요!");
+            
+            try {
+                const res = await fetch('/api/register-custom-quote', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: loginUser, emotion, text, author }) 
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    alert("✨ 나만의 명언이 성공적으로 등록되었습니다!");
+                    document.getElementById('reg-text').value = "";
+                    document.getElementById('reg-author').value = "";
+                    try {
+                        const expRes = await fetch('/api/pet/gain-exp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: loginUser, activity: 'quote' })
+                        });
+                        const expData = await expRes.json();
+                        if (expData.success) {
+                            showExpToast(expData.gainedExp || 3);
+                            if (expData.leveledUp) {
+                                setTimeout(() => {
+                                    alert(`🎉 축하합니다! 펫이 Lv.${expData.newLevel}(으)로 레벨업했습니다! 마이페이지에서 확인해보세요.`);
+                                }, 1000);
+                            }
+                        }
+                    } catch (e) {
+                        console.error("EXP 획득 실패:", e);
+                    }
+                } else {
+                    alert("등록에 실패했습니다.");
+                }
+            } catch (err) {
+                console.error("등록 실패:", err);
+            }
+        }
+
+        function showExpToast(amount) {
+            const oldToast = document.querySelector('.exp-toast');
+            if (oldToast) oldToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'exp-toast';
+            toast.innerHTML = `
+                <span class="exp-toast-icon">🐾</span>
+                <span class="exp-toast-text">펫 경험치 획득!</span>
+                <span class="exp-toast-amount">+${amount} EXP</span>
+            `;
+            document.body.appendChild(toast);
+
+            toast.offsetHeight; 
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 2500);
+        }
+    </script>
+
+<!-- Global Auth Security & Heartbeat (Injected) -->
+<script>
+(function() {
+    const u = sessionStorage.getItem('loginUser');
+    if (u) {
+        // 즉시 세션 유효성 검사 (서버 재실행 등 감지)
+        fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) {
+                sessionStorage.removeItem('loginUser');
+                alert("세션이 만료되었거나 서버가 재시작되었습니다. 다시 로그인해주세요.");
+                location.href = "/login";
+            }
+        }).catch(()=>{});
+
+        // 20초마다 생존 신고
+        setInterval(() => {
+            fetch('/api/heartbeat?username=' + encodeURIComponent(u))
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success) {
+                    sessionStorage.removeItem('loginUser');
+                    alert("세션이 만료되었습니다.");
+                    location.href = "/login";
+                }
+            }).catch(()=>{});
+        }, 3000);
+    }
+    window.logout = function() {
+        if (confirm("로그아웃 하시겠습니까?")) {
+            const currentUser = sessionStorage.getItem('loginUser');
+            if (currentUser) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser})
+                }).then(() => {
+                    sessionStorage.removeItem('loginUser');
+                    alert("정상적으로 로그아웃 되었습니다.");
+                    location.href = "/";
+                }).catch(() => {
+                    sessionStorage.removeItem('loginUser');
+                    location.href = "/";
+                });
+            } else {
+                location.href = "/";
+            }
+        }
+    };
+})();
+</script>
+
+
+
+
+<!-- 시간대별 고급 파티클 테마 및 글로우 효과 -->
+<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+<script>
+(function() {
+    function applyBodyTheme(hour) {
+        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        if (hour >= 6 && hour < 17) {
+            document.body.classList.add('theme-morning');
+        } else if (hour >= 17 && hour < 20) {
+            document.body.classList.add('theme-evening');
+        } else {
+            document.body.classList.add('theme-night');
+        }
+    }
+
+    const canvas = document.getElementById('themeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let currentHour = new Date().getHours();
+    
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initParticles() {
+        particles = [];
+        let count = 0;
+        let isNight = currentHour >= 20 || currentHour < 6;
+        let isEve = currentHour >= 17 && currentHour < 20;
+        let isMorning = currentHour >= 6 && currentHour < 17;
+
+        if (isMorning) count = 80; // 아침: 부유하는 먼지/햇살
+        else if (isEve) count = 50; // 저녁: 따뜻한 주황빛 입자
+        else count = 120; // 밤: 별처럼 많은 수 (기존 유지)
+
+        for (let i = 0; i < count; i++) {
+            particles.push(createParticle(isNight, isEve, isMorning));
+        }
+    }
+
+    function createParticle(isNight, isEve, isMorning) {
+        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
+        if (isMorning) {
+            // 아침: 먼지 느낌, 매우 연하고 작고 느리게 이동
+            size = Math.random() * 1.5 + 0.5;
+            speedX = (Math.random() - 0.5) * 0.15; // 좌우 아주 약간
+            speedY = Math.random() * 0.2 + 0.05; // 부유하며 살짝 내려감
+            color = '255, 255, 255'; 
+            twinkleSpeed = Math.random() * 0.005 + 0.002;
+            maxAlpha = Math.random() * 0.3 + 0.1; // 최대 조차도 흐릿함
+        } else if (isEve) {
+            // 저녁: 따뜻한 주황빛 퍼짐과 어울리는 입자, 좌에서 우로 약간 번지듯 이동
+            size = Math.random() * 2.5 + 1;
+            speedX = Math.random() * 0.3 + 0.1; // 왼쪽에서 퍼져나가는 속도
+            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
+            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50'; // 따뜻한 주황/노랑
+            twinkleSpeed = Math.random() * 0.01 + 0.005;
+            maxAlpha = Math.random() * 0.6 + 0.2;
+        } else {
+            // 밤: 유지 (미세한 별빛)
+            size = Math.random() * 1.5;
+            speedX = (Math.random() - 0.5) * 0.1;
+            speedY = (Math.random() - 0.5) * 0.1;
+            color = '255, 255, 255';
+            twinkleSpeed = Math.random() * 0.02 + 0.005;
+            maxAlpha = Math.random() * 0.8 + 0.2;
+        }
+        return { 
+            x: Math.random() * width, 
+            y: Math.random() * height, 
+            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
+            alpha: Math.random() * maxAlpha, 
+            alphaDir: Math.random() > 0.5 ? 1 : -1 
+        };
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        let isEve = currentHour >= 17 && currentHour < 20;
+
+        particles.forEach(p => {
+            p.alpha += p.twinkleSpeed * p.alphaDir;
+            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
+            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            
+            // 저녁에는 자체 글로우 (은은한 퍼짐 극대화)
+            if (isEve) {
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    applyBodyTheme(currentHour);
+    initParticles();
+    drawParticles();
+
+    setInterval(() => {
+        let newHour = new Date().getHours();
+        if (newHour !== currentHour) {
+            currentHour = newHour;
+            applyBodyTheme(currentHour);
+            initParticles();
+        }
+    }, 60000);
+})();
+</script>
+
+</body>
+
+</html>

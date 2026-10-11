@@ -307,14 +307,14 @@ db.getConnection((err, connection) => {
             level INT DEFAULT 1,
             last_checkin DATE DEFAULT NULL,
             total_completions INT DEFAULT 0,
-            completed_types TEXT DEFAULT '',
+            completed_types LONGTEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     `);
 
-    // [펫 커럼 보강] 기존 테이블에 신규 커럼 추가 (이미 있으면 무시)
+    // [펫 컬럼 보강] 기존 테이블에 신규 컬럼 추가 (이미 있으면 무시)
     db.query(`ALTER TABLE pets ADD COLUMN IF NOT EXISTS total_completions INT DEFAULT 0`);
-    db.query(`ALTER TABLE pets ADD COLUMN IF NOT EXISTS completed_types TEXT DEFAULT ''`);
+    db.query(`ALTER TABLE pets ADD COLUMN IF NOT EXISTS completed_types LONGTEXT`);
 
     // [나노 바나나 2의 핵심 처방 2] 기존 board_posts 테이블의 content 컬럼을 LONGTEXT로 강제 변경
     db.query(`ALTER TABLE board_posts MODIFY COLUMN content LONGTEXT NOT NULL`, (err) => {

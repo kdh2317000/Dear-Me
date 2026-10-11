@@ -4,7 +4,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // глобальный 세션 관리 객체 (중복 로그인 방지용)
 const activeSessions = {};

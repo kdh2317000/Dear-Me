@@ -13,16 +13,20 @@ const activeSessions = {};
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// [DB 설정] 학교 실습 서버 정보 (Connection Pool을 사용하여 연결 끊김 방지)
+// [DB 설정] Aiven 클라우드 MySQL 연결 설정
 const db = mysql.createPool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT, // 👈 이 부분 추가!
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     timezone: '+09:00',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: { // 👈 Aiven 보안 연결을 위해 이 부분도 꼭 추가!
+        rejectUnauthorized: false
+    }
 });
 
 db.getConnection((err, connection) => {

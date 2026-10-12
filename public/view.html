@@ -16,7 +16,15 @@
 
         /* 2. 상세보기 박스 레이아웃 */
         .main-wrapper { max-width: 1000px; margin: 50px auto !important; padding: 0 20px; }
-        .content-box { background: white; border-radius: 30px; border: 3px solid #5c67f2; padding: 50px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+        .content-box { 
+            background: rgba(255, 255, 255, 0.96); 
+            border-radius: 28px; 
+            border: 1.5px solid rgba(255, 255, 255, 0.8); 
+            padding: 50px; 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), 0 4px 15px rgba(92, 103, 242, 0.06); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
         
         .view-header { border-bottom: 2px solid #eee; padding-bottom: 25px; margin-bottom: 30px; }
         #viewTitle { font-size: 2.4rem; font-weight: bold; color: #333; margin-bottom: 15px; text-align: left; }
@@ -76,8 +84,13 @@
 
         /* [모바일 전용 최적화] 편의성 및 버튼 줄바꿈 방지 */
         @media (max-width: 768px) {
-            .main-wrapper { margin: 15px auto !important; padding: 0 10px !important; }
-            .content-box { padding: 22px 18px !important; border-radius: 20px !important; }
+            .main-wrapper { margin: 15px auto !important; padding: 0 12px !important; }
+            .content-box { 
+                padding: 24px 18px !important; 
+                border-radius: 24px !important; 
+                border: 1px solid rgba(255, 255, 255, 0.9) !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+            }
             #viewTitle { font-size: 1.55rem !important; margin-bottom: 12px !important; word-break: keep-all; }
             .view-info { font-size: 0.85rem !important; gap: 12px !important; flex-wrap: wrap; }
             #viewContent { min-height: 180px !important; font-size: 1.05rem !important; line-height: 1.8 !important; }
@@ -127,6 +140,9 @@
     var h = new Date().getHours();
     var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
     document.body.classList.add(c);
+    var color = (c === 'theme-morning') ? '#7acef4' : (c === 'theme-evening') ? '#dfb4ab' : '#1c234a';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', color);
 })();
 </script>
 
@@ -562,13 +578,19 @@
 (function() {
     function applyBodyTheme(hour) {
         document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
+        let themeColor = '#3b98ea';
         if (hour >= 6 && hour < 17) {
             document.body.classList.add('theme-morning');
+            themeColor = '#7acef4';
         } else if (hour >= 17 && hour < 20) {
             document.body.classList.add('theme-evening');
+            themeColor = '#dfb4ab';
         } else {
             document.body.classList.add('theme-night');
+            themeColor = '#1c234a';
         }
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', themeColor);
     }
 
     const canvas = document.getElementById('themeCanvas');

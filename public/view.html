@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/icon.svg">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
     <title>Dear Me - 상세보기</title>
-    <link rel="stylesheet" href="/style.css?v=1776116934115">
+    <link rel="stylesheet" href="/style.css?v=20261012_mobile_fix">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
 
@@ -73,6 +73,49 @@
         .btn-comment-like, .btn-comment-dislike { background: white; border: 1px solid #ccc; padding: 5px 12px; border-radius: 4px; cursor: pointer; color: #666; transition: 0.2s; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
         .btn-comment-like:hover { background: #f0f8ff; border-color: #3498db; color: #3498db; }
         .btn-comment-dislike:hover { background: #fff0f0; border-color: #e74c3c; color: #e74c3c; }
+
+        /* [모바일 전용 최적화] 편의성 및 버튼 줄바꿈 방지 */
+        @media (max-width: 768px) {
+            .main-wrapper { margin: 15px auto !important; padding: 0 10px !important; }
+            .content-box { padding: 22px 18px !important; border-radius: 20px !important; }
+            #viewTitle { font-size: 1.55rem !important; margin-bottom: 12px !important; word-break: keep-all; }
+            .view-info { font-size: 0.85rem !important; gap: 12px !important; flex-wrap: wrap; }
+            #viewContent { min-height: 180px !important; font-size: 1.05rem !important; line-height: 1.8 !important; }
+
+            .view-footer {
+                flex-direction: row !important;
+                gap: 8px !important;
+                padding-top: 16px !important;
+                margin-top: 30px !important;
+            }
+            .action-buttons {
+                display: flex !important;
+                gap: 8px !important;
+                flex: 1 !important;
+                justify-content: flex-end !important;
+            }
+            .btn-list, .btn-edit, .btn-delete {
+                padding: 10px 14px !important;
+                font-size: 0.9rem !important;
+                border-radius: 12px !important;
+                white-space: nowrap !important;
+                text-align: center !important;
+                line-height: 1.3 !important;
+                min-width: 68px !important;
+                box-sizing: border-box !important;
+            }
+            .btn-list {
+                flex-shrink: 0 !important;
+            }
+
+            .comment-section { margin-top: 25px !important; }
+            .comment-header { font-size: 1.05rem !important; }
+            .comment-input-box { margin-bottom: 20px !important; }
+            .comment-textarea { padding: 10px 12px !important; font-size: 0.95rem !important; min-height: 70px !important; }
+            .btn-comment-submit-inline { width: 75px !important; font-size: 0.95rem !important; }
+            .comment-item { padding: 14px 0 !important; }
+            .comment-text { font-size: 0.95rem !important; }
+        }
     </style>
     <script src="/mobile-nav.js" defer></script>
 </head>

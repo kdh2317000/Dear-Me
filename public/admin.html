@@ -1,281 +1,775 @@
 <!DOCTYPE html>
+<script>
+// ← 실제 코드 실행 전에 즉시 admin 인증 체크
+(function(){
+    const user = sessionStorage.getItem('loginUser');
+    if (user !== 'admin') {
+        alert('관리자만 접근 가능한 페이지입니다.');
+        location.href = '/login';
+    }
+})();
+</script>
 <html lang="ko">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#5c67f2">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icon.svg">
-    <link rel="icon" type="image/svg+xml" href="/icon.svg">
     <meta charset="UTF-8">
-    <title>Dear Me - 관리자 모드</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dear Me - 관리자 패널</title>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .container { max-width: 1000px; }
-        .feedback-table { width: 100%; border-collapse: collapse; margin-top: 30px; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .feedback-table th, .feedback-table td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
-        .feedback-table th { background: #5c67f2; color: white; font-weight: bold; }
-        .feedback-table tr:hover { background: #f9faff; }
-        .time { font-size: 0.85rem; color: #999; }
-        .user-id { font-weight: bold; color: #5c67f2; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #22263a;
+            --border: rgba(255,255,255,0.08);
+            --accent: #7c6ef7;
+            --accent2: #56cfba;
+            --danger: #f25a5a;
+            --warning: #f2a75a;
+            --success: #5af27a;
+            --text: #e8eaf6;
+            --text2: #8b8fa8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-right { display: flex; gap: 1rem; align-items: center; }
+        .btn-home {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .btn-home:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* ── Layout ── */
+        .layout { display: flex; min-height: calc(100vh - 60px); }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 220px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            color: var(--text2);
+            padding: 0 1.2rem;
+            margin-bottom: .5rem;
+            text-transform: uppercase;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: .65rem 1.2rem;
+            cursor: pointer;
+            font-size: .9rem;
+            color: var(--text2);
+            border-left: 3px solid transparent;
+            transition: all .18s;
+        }
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+        .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(124,110,247,.1); font-weight: 600; }
+        .nav-icon { font-size: 1.1rem; }
+
+        /* ── Main ── */
+        .main { flex: 1; padding: 2rem; overflow-x: auto; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .page-title { font-size: 1.4rem; font-weight: 700; }
+        .page-count {
+            font-size: .8rem;
+            color: var(--text2);
+            background: var(--surface2);
+            padding: .3rem .8rem;
+            border-radius: 20px;
+        }
+
+        /* ── Add Form ── */
+        .add-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: .8rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .form-group { display: flex; flex-direction: column; gap: .4rem; flex: 1; min-width: 140px; }
+        .form-group label { font-size: .78rem; color: var(--text2); font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .55rem .8rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: .88rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--accent);
+        }
+        .form-group select option { background: #1a1d27; }
+
+        /* ── Filter bar ── */
+        .filter-bar {
+            display: flex;
+            gap: .8rem;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .5rem .9rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: .88rem;
+            outline: none;
+        }
+        .filter-bar select option { background: #1a1d27; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: .55rem 1.1rem;
+            border-radius: 8px;
+            border: none;
+            font-family: inherit;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .18s;
+            white-space: nowrap;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #6a5de6; transform: translateY(-1px); }
+        .btn-danger { background: rgba(242,90,90,.15); color: var(--danger); border: 1px solid rgba(242,90,90,.3); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-edit { background: rgba(242,167,90,.15); color: var(--warning); border: 1px solid rgba(242,167,90,.3); font-size: .8rem; padding: .35rem .7rem; }
+        .btn-edit:hover { background: var(--warning); color: white; }
+        .btn-sm { font-size: .78rem; padding: .35rem .7rem; }
+
+        /* ── Table ── */
+        .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: var(--surface); min-width: 600px; }
+        thead tr { background: var(--surface2); }
+        th {
+            padding: .9rem 1rem;
+            text-align: left;
+            font-size: .78rem;
+            font-weight: 600;
+            letter-spacing: .05em;
+            color: var(--text2);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        td {
+            padding: .8rem 1rem;
+            border-top: 1px solid var(--border);
+            font-size: .88rem;
+            vertical-align: middle;
+        }
+        tr:hover td { background: rgba(255,255,255,.025); }
+        .td-actions { display: flex; gap: .5rem; align-items: center; }
+
+        /* ── Badge ── */
+        .badge {
+            display: inline-block;
+            padding: .2rem .6rem;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+        .badge-joy { background: rgba(255,220,50,.15); color: #ffd432; }
+        .badge-sadness { background: rgba(90,160,242,.15); color: #5aa0f2; }
+        .badge-worry { background: rgba(200,130,242,.15); color: #c882f2; }
+        .badge-anger { background: rgba(242,90,90,.15); color: #f25a5a; }
+        .badge-lonely { background: rgba(90,207,186,.15); color: #5acfba; }
+        .badge-lethargy { background: rgba(150,150,180,.15); color: #a0a0c0; }
+        .badge-anxiety { background: rgba(242,167,90,.15); color: #f2a75a; }
+        .badge-flutter { background: rgba(242,130,180,.15); color: #f282b4; }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .8rem 1.4rem;
+            border-radius: 10px;
+            font-size: .9rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,.5);
+            transform: translateY(120%);
+            transition: transform .3s ease;
+            z-index: 9999;
+        }
+        #toast.show { transform: translateY(0); }
+        #toast.success { border-color: var(--success); color: var(--success); }
+        #toast.error { border-color: var(--danger); color: var(--danger); }
+
+        /* ── Loading ── */
+        .loading { text-align: center; padding: 3rem; color: var(--text2); font-size: .95rem; }
+        .empty { text-align: center; padding: 3rem; color: var(--text2); }
+
+        /* ── Edit modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.7);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            width: min(500px, 90vw);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .modal h3 { font-size: 1.1rem; font-weight: 700; }
+        .modal-actions { display: flex; gap: .8rem; justify-content: flex-end; }
+
+        @media (max-width: 640px) {
+            .sidebar { width: 56px; }
+            .sidebar-title, .nav-item span { display: none; }
+            .nav-item { justify-content: center; padding: .8rem; }
+            .main { padding: 1rem; }
+        }
     </style>
-    <script src="/mobile-nav.js" defer></script>
 </head>
 <body>
 
-<script>
-// 깜빡임 방지용 즉시 실행 테마 적용 (노란색 플래시 제거)
-(function(){
-    var h = new Date().getHours();
-    var c = (h>=6 && h<17) ? 'theme-morning' : (h>=17 && h<20) ? 'theme-evening' : 'theme-night';
-    document.body.classList.add(c);
-})();
-</script>
+<div class="header">
+    <div class="header-logo">🛠 Dear Me 관리자</div>
+    <div class="header-right">
+        <a href="/" class="btn-home">← 홈으로</a>
+    </div>
+</div>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <h1 class="nav-logo">Dear Me 관리자</h1>
-            <ul class="nav-menu">
-                <li><a href="/">홈으로 가기</a></li>
-            </ul>
+<div class="layout">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-title">관리 메뉴</div>
+        <div class="nav-item active" data-page="system-quotes" onclick="showPage('system-quotes', this)">
+            <span class="nav-icon">💬</span><span>시스템 명언</span>
+        </div>
+        <div class="nav-item" data-page="custom-quotes" onclick="showPage('custom-quotes', this)">
+            <span class="nav-icon">✍️</span><span>사용자 명언</span>
+        </div>
+        <div class="nav-item" data-page="fortune-cookies" onclick="showPage('fortune-cookies', this)">
+            <span class="nav-icon">🥠</span><span>포춘쿠키</span>
+        </div>
+        <div class="nav-item" data-page="users" onclick="showPage('users', this)">
+            <span class="nav-icon">👤</span><span>사용자</span>
+        </div>
+        <div class="nav-item" data-page="board-posts" onclick="showPage('board-posts', this)">
+            <span class="nav-icon">📋</span><span>게시글</span>
+        </div>
+        <div class="nav-item" data-page="feedbacks" onclick="showPage('feedbacks', this)">
+            <span class="nav-icon">📩</span><span>피드백</span>
         </div>
     </nav>
 
-    <div class="container">
-        <h2>📩 사용자 피드백 관리</h2>
-        <p>우리 서비스 주주(사용자)님들이 남겨주신 소중한 의견입니다.</p>
+    <!-- Main -->
+    <main class="main">
 
-        <table class="feedback-table">
-            <thead>
-                <tr>
-                    <th>보낸 이</th>
-                    <th>내용</th>
-                    <th>일시</th>
-                </tr>
-            </thead>
-            <tbody id="feedback-list">
-                <!-- 피드백 목록이 여기에 뜹니다 -->
-            </tbody>
-        </table>
+        <!-- ① 시스템 명언 -->
+        <div id="page-system-quotes" class="page active">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">💬 시스템 명언</div>
+                    <span class="page-count" id="sq-count">-</span>
+                </div>
+            </div>
+            <!-- 추가 폼 -->
+            <div class="add-form">
+                <div class="form-group">
+                    <label>감정</label>
+                    <select id="sq-emotion">
+                        <option value="joy">😊 기쁨 (joy)</option>
+                        <option value="sadness">😭 슬픔 (sadness)</option>
+                        <option value="worry">😟 고민 (worry)</option>
+                        <option value="anger">😡 화남 (anger)</option>
+                        <option value="lonely">👤 외로움 (lonely)</option>
+                        <option value="lethargy">😴 무기력 (lethargy)</option>
+                        <option value="anxiety">😰 불안 (anxiety)</option>
+                        <option value="flutter">💕 설렘 (flutter)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:3;">
+                    <label>명언 내용</label>
+                    <input type="text" id="sq-text" placeholder="명언 내용을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label>작가/출처</label>
+                    <input type="text" id="sq-author" placeholder="작가 이름">
+                </div>
+                <button class="btn btn-primary" onclick="addSystemQuote()">+ 추가</button>
+            </div>
+            <!-- 필터 -->
+            <div class="filter-bar">
+                <select id="sq-filter" onchange="loadSystemQuotes()">
+                    <option value="">전체 감정</option>
+                    <option value="joy">😊 기쁨</option>
+                    <option value="sadness">😭 슬픔</option>
+                    <option value="worry">😟 고민</option>
+                    <option value="anger">😡 화남</option>
+                    <option value="lonely">👤 외로움</option>
+                    <option value="lethargy">😴 무기력</option>
+                    <option value="anxiety">😰 불안</option>
+                    <option value="flutter">💕 설렘</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:50px">ID</th>
+                        <th style="width:110px">감정</th>
+                        <th>명언</th>
+                        <th style="width:120px">작가</th>
+                        <th style="width:110px">관리</th>
+                    </tr></thead>
+                    <tbody id="sq-table"><tr><td colspan="5" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ② 사용자 명언 -->
+        <div id="page-custom-quotes" class="page">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">✍️ 사용자 등록 명언</div>
+                    <span class="page-count" id="cq-count">-</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:50px">ID</th>
+                        <th style="width:100px">유저</th>
+                        <th style="width:110px">감정</th>
+                        <th>명언</th>
+                        <th style="width:100px">작가</th>
+                        <th style="width:80px">삭제</th>
+                    </tr></thead>
+                    <tbody id="cq-table"><tr><td colspan="6" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ③ 포춘쿠키 -->
+        <div id="page-fortune-cookies" class="page">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">🥠 포춘쿠키</div>
+                    <span class="page-count" id="fc-count">-</span>
+                </div>
+            </div>
+            <div class="add-form">
+                <div class="form-group" style="flex:4;">
+                    <label>포춘쿠키 문구</label>
+                    <input type="text" id="fc-text" placeholder="새로운 포춘쿠키 문구를 입력하세요">
+                </div>
+                <button class="btn btn-primary" onclick="addFortuneCookie()">+ 추가</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:60px">ID</th>
+                        <th>문구</th>
+                        <th style="width:80px">삭제</th>
+                    </tr></thead>
+                    <tbody id="fc-table"><tr><td colspan="3" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ④ 사용자 -->
+        <div id="page-users" class="page">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">👤 사용자 관리</div>
+                    <span class="page-count" id="usr-count">-</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:60px">ID</th>
+                        <th>유저명</th>
+                        <th>주요 감정</th>
+                        <th>가입일</th>
+                        <th style="width:80px">삭제</th>
+                    </tr></thead>
+                    <tbody id="usr-table"><tr><td colspan="5" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ⑤ 게시글 -->
+        <div id="page-board-posts" class="page">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">📋 게시글 관리</div>
+                    <span class="page-count" id="bp-count">최신 100개</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:50px">ID</th>
+                        <th style="width:80px">유저</th>
+                        <th>제목/내용</th>
+                        <th style="width:60px">댓글</th>
+                        <th style="width:80px">작성일</th>
+                        <th style="width:80px">삭제</th>
+                    </tr></thead>
+                    <tbody id="bp-table"><tr><td colspan="6" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ⑥ 피드백 -->
+        <div id="page-feedbacks" class="page">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div class="page-title">📩 피드백</div>
+                    <span class="page-count" id="fb-count">-</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:50px">ID</th>
+                        <th style="width:80px">유저</th>
+                        <th>내용</th>
+                        <th>답변</th>
+                        <th style="width:90px">날짜</th>
+                        <th style="width:80px">삭제</th>
+                    </tr></thead>
+                    <tbody id="fb-table"><tr><td colspan="6" class="loading">로딩 중...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Edit Modal (시스템 명언 수정) -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h3>✏️ 명언 수정</h3>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+            <label>감정</label>
+            <select id="edit-emotion">
+                <option value="joy">😊 기쁨 (joy)</option>
+                <option value="sadness">😭 슬픔 (sadness)</option>
+                <option value="worry">😟 고민 (worry)</option>
+                <option value="anger">😡 화남 (anger)</option>
+                <option value="lonely">👤 외로움 (lonely)</option>
+                <option value="lethargy">😴 무기력 (lethargy)</option>
+                <option value="anxiety">😰 불안 (anxiety)</option>
+                <option value="flutter">💕 설렘 (flutter)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>명언 내용</label>
+            <input type="text" id="edit-text">
+        </div>
+        <div class="form-group">
+            <label>작가</label>
+            <input type="text" id="edit-author">
+        </div>
+        <div class="modal-actions">
+            <button class="btn" style="background:var(--surface2);" onclick="closeModal()">취소</button>
+            <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+        </div>
     </div>
+</div>
 
-    <script>
-        window.onload = function() {
-            fetch('/api/admin/feedbacks')
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById('feedback-list');
-                    if (data.length === 0) {
-                        list.innerHTML = '<tr><td colspan="3" style="text-align:center;">아직 도착한 피드백이 없습니다.</td></tr>';
-                        return;
-                    }
+<div id="toast"></div>
 
-                    data.forEach(fb => {
-                        const row = `
-                            <tr>
-                                <td class="user-id">${fb.username}</td>
-                                <td>${fb.content}</td>
-                                <td class="time">${new Date(fb.created_at).toLocaleString()}</td>
-                            </tr>
-                        `;
-                        list.innerHTML += row;
-                    });
-                });
-        };
-    </script>
-
-
-<!-- Global Auth Security & Heartbeat (Injected) -->
 <script>
-(function() {
-    const u = sessionStorage.getItem('loginUser');
-    if (u) {
-        // 즉시 세션 유효성 검사 (서버 재실행 등 감지)
-        fetch('/api/heartbeat?username=' + encodeURIComponent(u))
-        .then(res => res.json())
-        .then(data => {
-            if(!data.success) {
-                sessionStorage.removeItem('loginUser');
-                alert("세션이 만료되었거나 서버가 재시작되었습니다. 다시 로그인해주세요.");
-                location.href = "/login";
-            }
-        }).catch(()=>{});
+// ── 유틸 ──
+const $ = id => document.getElementById(id);
+const emotionLabel = { joy:'😊 기쁨', sadness:'😭 슬픔', worry:'😟 고민', anger:'😡 화남', lonely:'👤 외로움', lethargy:'😴 무기력', anxiety:'😰 불안', flutter:'💕 설렘' };
+const emotionBadge = e => `<span class="badge badge-${e}">${emotionLabel[e]||e}</span>`;
+const fmtDate = s => s ? new Date(s).toLocaleDateString('ko-KR') : '-';
+const stripHtml = s => s ? s.replace(/<[^>]*>/g,'').substring(0, 60) : '';
 
-        // 20초마다 생존 신고
-        setInterval(() => {
-            fetch('/api/heartbeat?username=' + encodeURIComponent(u))
-            .then(res => res.json())
-            .then(data => {
-                if(!data.success) {
-                    sessionStorage.removeItem('loginUser');
-                    alert("세션이 만료되었습니다.");
-                    location.href = "/login";
-                }
-            }).catch(()=>{});
-        }, 3000);
-    }
-    window.logout = function() {
-        if (confirm("로그아웃 하시겠습니까?")) {
-            const currentUser = sessionStorage.getItem('loginUser');
-            if (currentUser) {
-                fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username: currentUser})
-                }).then(() => {
-                    sessionStorage.removeItem('loginUser');
-                    alert("정상적으로 로그아웃 되었습니다.");
-                    location.href = "/";
-                }).catch(() => {
-                    sessionStorage.removeItem('loginUser');
-                    location.href = "/";
-                });
-            } else {
-                location.href = "/";
-            }
-        }
-    };
-})();
-</script>
+function toast(msg, type='success') {
+    const el = $('toast');
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    setTimeout(() => el.className = '', 2500);
+}
 
+async function api(url, opts={}) {
+    const headers = { 'Content-Type':'application/json', 'x-admin-user': 'admin', ...(opts.headers||{}) };
+    const res = await fetch(url, { ...opts, headers });
+    return res.json();
+}
 
+// ── 페이지 전환 ──
+const loaders = { 'system-quotes': loadSystemQuotes, 'custom-quotes': loadCustomQuotes, 'fortune-cookies': loadFortuneCookies, 'users': loadUsers, 'board-posts': loadBoardPosts, 'feedbacks': loadFeedbacks };
+let loaded = {};
 
+function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    $(`page-${name}`).classList.add('active');
+    el.classList.add('active');
+    if (!loaded[name]) { loaded[name] = true; loaders[name](); }
+}
 
+// ── ① 시스템 명언 ──
+async function loadSystemQuotes() {
+    const emotion = $('sq-filter').value;
+    const url = '/api/admin/system-quotes' + (emotion ? `?emotion=${emotion}` : '');
+    const data = await api(url);
+    $('sq-count').textContent = data.length + '개';
+    if (!data.length) { $('sq-table').innerHTML = '<tr><td colspan="5" class="empty">데이터 없음</td></tr>'; return; }
+    $('sq-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td>${emotionBadge(r.emotion)}</td>
+            <td>${r.text}</td>
+            <td style="color:var(--text2)">${r.author}</td>
+            <td class="td-actions">
+                <button class="btn btn-edit" onclick="openEdit(${r.id},'${r.emotion}',${JSON.stringify(r.text)},${JSON.stringify(r.author)})">수정</button>
+                <button class="btn btn-danger btn-sm" onclick="delSystemQuote(${r.id})">삭제</button>
+            </td>
+        </tr>`).join('');
+}
 
+async function addSystemQuote() {
+    const emotion = $('sq-emotion').value;
+    const text = $('sq-text').value.trim();
+    const author = $('sq-author').value.trim();
+    if (!text || !author) { toast('내용과 작가를 모두 입력해주세요.', 'error'); return; }
+    const res = await api('/api/admin/system-quotes', { method:'POST', body: JSON.stringify({emotion, text, author}) });
+    if (res.success) { toast('명언이 추가됐어요!'); $('sq-text').value=''; $('sq-author').value=''; loaded['system-quotes']=false; loadSystemQuotes(); }
+    else toast(res.error, 'error');
+}
 
+async function delSystemQuote(id) {
+    if (!confirm('이 명언을 삭제할까요?')) return;
+    const res = await api(`/api/admin/system-quotes/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadSystemQuotes(); }
+    else toast(res.error, 'error');
+}
 
+// 수정 모달
+function openEdit(id, emotion, text, author) {
+    $('edit-id').value = id;
+    $('edit-emotion').value = emotion;
+    $('edit-text').value = text;
+    $('edit-author').value = author;
+    $('editModal').classList.add('open');
+}
+function closeModal() { $('editModal').classList.remove('open'); }
 
+async function saveEdit() {
+    const id = $('edit-id').value;
+    const emotion = $('edit-emotion').value;
+    const text = $('edit-text').value.trim();
+    const author = $('edit-author').value.trim();
+    if (!text || !author) { toast('모두 입력해주세요.', 'error'); return; }
+    const res = await api(`/api/admin/system-quotes/${id}`, { method:'PUT', body: JSON.stringify({emotion, text, author}) });
+    if (res.success) { toast('수정됐어요!'); closeModal(); loadSystemQuotes(); }
+    else toast(res.error, 'error');
+}
+$('editModal').addEventListener('click', e => { if(e.target===$('editModal')) closeModal(); });
 
-<!-- 시간대별 고급 파티클 테마 및 글로우 효과 -->
-<canvas id="themeCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
-<script>
-(function() {
-    function applyBodyTheme(hour) {
-        document.body.classList.remove('theme-morning', 'theme-evening', 'theme-night');
-        if (hour >= 6 && hour < 17) {
-            document.body.classList.add('theme-morning');
-        } else if (hour >= 17 && hour < 20) {
-            document.body.classList.add('theme-evening');
-        } else {
-            document.body.classList.add('theme-night');
-        }
-    }
+// ── ② 사용자 명언 ──
+async function loadCustomQuotes() {
+    const data = await api('/api/admin/custom-quotes');
+    $('cq-count').textContent = data.length + '개';
+    if (!data.length) { $('cq-table').innerHTML = '<tr><td colspan="6" class="empty">데이터 없음</td></tr>'; return; }
+    $('cq-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td style="color:var(--accent)">${r.username}</td>
+            <td>${emotionBadge(r.emotion)}</td>
+            <td>${r.text}</td>
+            <td style="color:var(--text2)">${r.author}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="delCustomQuote(${r.id})">삭제</button></td>
+        </tr>`).join('');
+}
 
-    const canvas = document.getElementById('themeCanvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let particles = [];
-    let currentHour = new Date().getHours();
-    
-    function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
+async function delCustomQuote(id) {
+    if (!confirm('이 명언을 삭제할까요?')) return;
+    const res = await api(`/api/admin/custom-quotes/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadCustomQuotes(); }
+    else toast(res.error, 'error');
+}
 
-    function initParticles() {
-        particles = [];
-        let count = 0;
-        let isNight = currentHour >= 20 || currentHour < 6;
-        let isEve = currentHour >= 17 && currentHour < 20;
-        let isMorning = currentHour >= 6 && currentHour < 17;
+// ── ③ 포춘쿠키 ──
+async function loadFortuneCookies() {
+    const data = await api('/api/admin/fortune-cookies');
+    $('fc-count').textContent = data.length + '개';
+    if (!data.length) { $('fc-table').innerHTML = '<tr><td colspan="3" class="empty">데이터 없음</td></tr>'; return; }
+    $('fc-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td>${r.text}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="delFortuneCookie(${r.id})">삭제</button></td>
+        </tr>`).join('');
+}
 
-        if (isMorning) count = 80; // 아침: 부유하는 먼지/햇살
-        else if (isEve) count = 50; // 저녁: 따뜻한 주황빛 입자
-        else count = 120; // 밤: 별처럼 많은 수 (기존 유지)
+async function addFortuneCookie() {
+    const text = $('fc-text').value.trim();
+    if (!text) { toast('내용을 입력해주세요.', 'error'); return; }
+    const res = await api('/api/admin/fortune-cookies', { method:'POST', body: JSON.stringify({text}) });
+    if (res.success) { toast('추가됐어요!'); $('fc-text').value=''; loaded['fortune-cookies']=false; loadFortuneCookies(); }
+    else toast(res.error, 'error');
+}
 
-        for (let i = 0; i < count; i++) {
-            particles.push(createParticle(isNight, isEve, isMorning));
-        }
-    }
+async function delFortuneCookie(id) {
+    if (!confirm('이 포춘쿠키를 삭제할까요?')) return;
+    const res = await api(`/api/admin/fortune-cookies/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadFortuneCookies(); }
+    else toast(res.error, 'error');
+}
 
-    function createParticle(isNight, isEve, isMorning) {
-        let size, speedX, speedY, color, twinkleSpeed, maxAlpha;
-        if (isMorning) {
-            // 아침: 먼지 느낌, 매우 연하고 작고 느리게 이동
-            size = Math.random() * 1.5 + 0.5;
-            speedX = (Math.random() - 0.5) * 0.15; // 좌우 아주 약간
-            speedY = Math.random() * 0.2 + 0.05; // 부유하며 살짝 내려감
-            color = '255, 255, 255'; 
-            twinkleSpeed = Math.random() * 0.005 + 0.002;
-            maxAlpha = Math.random() * 0.3 + 0.1; // 최대 조차도 흐릿함
-        } else if (isEve) {
-            // 저녁: 따뜻한 주황빛 퍼짐과 어울리는 입자, 좌에서 우로 약간 번지듯 이동
-            size = Math.random() * 2.5 + 1;
-            speedX = Math.random() * 0.3 + 0.1; // 왼쪽에서 퍼져나가는 속도
-            speedY = (Math.random() - 0.5) * 0.2 - 0.05; 
-            color = '255, ' + Math.floor(Math.random() * 100 + 120) + ', 50'; // 따뜻한 주황/노랑
-            twinkleSpeed = Math.random() * 0.01 + 0.005;
-            maxAlpha = Math.random() * 0.6 + 0.2;
-        } else {
-            // 밤: 유지 (미세한 별빛)
-            size = Math.random() * 1.5;
-            speedX = (Math.random() - 0.5) * 0.1;
-            speedY = (Math.random() - 0.5) * 0.1;
-            color = '255, 255, 255';
-            twinkleSpeed = Math.random() * 0.02 + 0.005;
-            maxAlpha = Math.random() * 0.8 + 0.2;
-        }
-        return { 
-            x: Math.random() * width, 
-            y: Math.random() * height, 
-            size, speedX, speedY, color, twinkleSpeed, maxAlpha, 
-            alpha: Math.random() * maxAlpha, 
-            alphaDir: Math.random() > 0.5 ? 1 : -1 
-        };
-    }
+// ── ④ 사용자 ──
+async function loadUsers() {
+    const data = await api('/api/admin/users');
+    $('usr-count').textContent = data.length + '명';
+    if (!data.length) { $('usr-table').innerHTML = '<tr><td colspan="5" class="empty">데이터 없음</td></tr>'; return; }
+    $('usr-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td style="color:var(--accent);font-weight:600">${r.username}</td>
+            <td>${r.top_emotion || '-'}</td>
+            <td style="color:var(--text2)">${fmtDate(r.created_at)}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="delUser(${r.id},'${r.username}')">삭제</button></td>
+        </tr>`).join('');
+}
 
-    function drawParticles() {
-        ctx.clearRect(0, 0, width, height);
-        let isEve = currentHour >= 17 && currentHour < 20;
+async function delUser(id, username) {
+    if (!confirm(`"${username}" 계정을 삭제할까요? 복구할 수 없어요!`)) return;
+    const res = await api(`/api/admin/users/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadUsers(); }
+    else toast(res.error, 'error');
+}
 
-        particles.forEach(p => {
-            p.alpha += p.twinkleSpeed * p.alphaDir;
-            if (p.alpha > p.maxAlpha) { p.alpha = p.maxAlpha; p.alphaDir = -1; }
-            if (p.alpha < 0) { p.alpha = 0; p.alphaDir = 1; }
-            
-            p.x += p.speedX;
-            p.y += p.speedY;
-            
-            if (p.x < -20) p.x = width + 20;
-            if (p.x > width + 20) p.x = -20;
-            if (p.y < -20) p.y = height + 20;
-            if (p.y > height + 20) p.y = -20;
-            
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
-            
-            // 저녁에는 자체 글로우 (은은한 퍼짐 극대화)
-            if (isEve) {
-                ctx.shadowBlur = p.size * 2;
-                ctx.shadowColor = 'rgba(' + p.color + ', ' + Math.max(p.alpha, 0) + ')';
-            } else {
-                ctx.shadowBlur = 0;
-            }
-            
-            ctx.fill();
-        });
-        requestAnimationFrame(drawParticles);
-    }
+// ── ⑤ 게시글 ──
+async function loadBoardPosts() {
+    const data = await api('/api/admin/board-posts');
+    if (!data.length) { $('bp-table').innerHTML = '<tr><td colspan="6" class="empty">데이터 없음</td></tr>'; return; }
+    $('bp-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td style="color:var(--accent)">${r.username}</td>
+            <td>${r.parent_id ? '<span style="color:var(--text2);font-size:.8rem">└ 댓글</span> ' : ''}${r.is_notice?'<span class="badge" style="background:rgba(124,110,247,.2);color:var(--accent)">공지</span> ':''}${r.title ? `<strong>${r.title}</strong><br><span style="color:var(--text2);font-size:.82rem">${stripHtml(r.content)}</span>` : stripHtml(r.content)}</td>
+            <td style="text-align:center;color:var(--text2)">${r.views||0}</td>
+            <td style="color:var(--text2)">${fmtDate(r.created_at)}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="delBoardPost(${r.id})">삭제</button></td>
+        </tr>`).join('');
+}
 
-    applyBodyTheme(currentHour);
-    initParticles();
-    drawParticles();
+async function delBoardPost(id) {
+    if (!confirm('게시글(+댓글 포함)을 삭제할까요?')) return;
+    const res = await api(`/api/admin/board-posts/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadBoardPosts(); }
+    else toast(res.error, 'error');
+}
 
-    setInterval(() => {
-        let newHour = new Date().getHours();
-        if (newHour !== currentHour) {
-            currentHour = newHour;
-            applyBodyTheme(currentHour);
-            initParticles();
-        }
-    }, 60000);
-})();
+// ── ⑥ 피드백 ──
+async function loadFeedbacks() {
+    const data = await api('/api/admin/feedbacks');
+    $('fb-count').textContent = data.length + '개';
+    if (!data.length) { $('fb-table').innerHTML = '<tr><td colspan="6" class="empty">데이터 없음</td></tr>'; return; }
+    $('fb-table').innerHTML = data.map(r => `
+        <tr>
+            <td style="color:var(--text2)">${r.id}</td>
+            <td style="color:var(--accent)">${r.username}</td>
+            <td>${r.content}</td>
+            <td style="color:var(--text2)">${r.reply || '-'}</td>
+            <td style="color:var(--text2)">${fmtDate(r.created_at)}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="delFeedback(${r.id})">삭제</button></td>
+        </tr>`).join('');
+}
+
+async function delFeedback(id) {
+    if (!confirm('이 피드백을 삭제할까요?')) return;
+    const res = await api(`/api/admin/feedbacks/${id}`, {method:'DELETE'});
+    if (res.success) { toast('삭제됐어요!'); loadFeedbacks(); }
+    else toast(res.error, 'error');
+}
+
+// ── 초기 로드 ──
+loadSystemQuotes();
+loaded['system-quotes'] = true;
 </script>
 
 </body>
-
 </html>

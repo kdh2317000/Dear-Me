@@ -1070,6 +1070,134 @@ app.post('/api/pet/new-animal', (req, res) => {
     });
 });
 
+// =====================================================
+// [관리자 DB 관리 API] - admin 계정 전용
+// =====================================================
+
+// 관리자 인증 미들웨어
+function requireAdmin(req, res, next) {
+    const adminUser = req.headers['x-admin-user'];
+    if (adminUser !== 'admin') {
+        return res.status(401).json({ error: '관리자 권한이 필요합니다.' });
+    }
+    next();
+}
+
+// /api/admin/* 전체에 미들웨어 적용
+app.use('/api/admin', requireAdmin);
+
+// --- system_quotes (시스템 명언) ---
+app.get('/api/admin/system-quotes', (req, res) => {
+    const emotion = req.query.emotion || '';
+    let sql = 'SELECT * FROM system_quotes';
+    const params = [];
+    if (emotion) { sql += ' WHERE emotion = ?'; params.push(emotion); }
+    sql += ' ORDER BY id ASC';
+    db.query(sql, params, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.post('/api/admin/system-quotes', (req, res) => {
+    const { emotion, text, author } = req.body;
+    if (!emotion || !text || !author) return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
+    db.query('INSERT INTO system_quotes (emotion, text, author) VALUES (?, ?, ?)', [emotion, text, author], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id: result.insertId });
+    });
+});
+app.put('/api/admin/system-quotes/:id', (req, res) => {
+    const { emotion, text, author } = req.body;
+    db.query('UPDATE system_quotes SET emotion=?, text=?, author=? WHERE id=?', [emotion, text, author, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+app.delete('/api/admin/system-quotes/:id', (req, res) => {
+    db.query('DELETE FROM system_quotes WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- custom_quotes (사용자 등록 명언) ---
+app.get('/api/admin/custom-quotes', (req, res) => {
+    db.query('SELECT * FROM custom_quotes ORDER BY id DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.delete('/api/admin/custom-quotes/:id', (req, res) => {
+    db.query('DELETE FROM custom_quotes WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- fortune_cookies (포춘쿠키) ---
+app.get('/api/admin/fortune-cookies', (req, res) => {
+    db.query('SELECT * FROM fortune_cookies ORDER BY id ASC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.post('/api/admin/fortune-cookies', (req, res) => {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: '내용을 입력해주세요.' });
+    db.query('INSERT INTO fortune_cookies (text) VALUES (?)', [text], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id: result.insertId });
+    });
+});
+app.delete('/api/admin/fortune-cookies/:id', (req, res) => {
+    db.query('DELETE FROM fortune_cookies WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- users (사용자) ---
+app.get('/api/admin/users', (req, res) => {
+    db.query('SELECT id, username, created_at, top_emotion FROM users ORDER BY id ASC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.delete('/api/admin/users/:id', (req, res) => {
+    db.query('DELETE FROM users WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- board_posts (게시글) ---
+app.get('/api/admin/board-posts', (req, res) => {
+    db.query('SELECT * FROM board_posts ORDER BY id DESC LIMIT 100', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.delete('/api/admin/board-posts/:id', (req, res) => {
+    db.query('DELETE FROM board_posts WHERE id = ? OR parent_id = ?', [req.params.id, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- feedbacks (피드백) ---
+app.get('/api/admin/feedbacks', (req, res) => {
+    db.query('SELECT * FROM feedbacks ORDER BY id DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+app.delete('/api/admin/feedbacks/:id', (req, res) => {
+    db.query('DELETE FROM feedbacks WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
 // 나머지 일반 경로들 (write, board, recommend, library, mypage 등)
 app.get('/board/write', (req, res) => res.sendFile(path.join(__dirname, 'public', 'write.html')));
 app.get('/board', (req, res) => res.sendFile(path.join(__dirname, 'public', 'board.html')));

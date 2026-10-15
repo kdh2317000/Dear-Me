@@ -4,7 +4,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // глобальный 세션 관리 객체 (중복 로그인 방지용)
 const activeSessions = {};
@@ -13,21 +13,27 @@ const activeSessions = {};
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// [DB 설정] Aiven 클라우드 MySQL 연결 설정
-const db = mysql.createPool({
+// [DB 설정] MySQL 연결 설정 (학교 실습 서버 및 클라우드 DB 호환)
+const poolConfig = {
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT, // 👈 이 부분 추가!
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     timezone: '+09:00',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0,
-    ssl: { // 👈 Aiven 보안 연결을 위해 이 부분도 꼭 추가!
+    queueLimit: 0
+};
+
+// 클라우드 DB(Aiven 등) SSL 연결이 필요한 경우에만 적용
+if (process.env.DB_SSL === 'true') {
+    poolConfig.ssl = {
         rejectUnauthorized: false
-    }
-});
+    };
+}
+
+const db = mysql.createPool(poolConfig);
 
 db.getConnection((err, connection) => {
     if (err) {
@@ -896,6 +902,10 @@ app.get('/pet-collection', (req, res) => { res.sendFile(path.join(__dirname, 'pu
 app.post('/login-process', (req, res) => {
     const { username, password } = req.body;
     db.query('SELECT * FROM users WHERE TRIM(username) = TRIM(?) AND password = ?', [username, password], (err, results) => {
+        if (err) {
+            console.error('❌ 로그인 DB 쿼리 오류:', err);
+            return res.status(500).json({ success: false, message: "DB 오류가 발생했습니다." });
+        }
         if (results && results.length > 0) {
             // 중복 로그인 방지 로직
             if (activeSessions[username] && (Date.now() - activeSessions[username] < 8000)) {
@@ -904,7 +914,7 @@ app.post('/login-process', (req, res) => {
             activeSessions[username] = Date.now();
             res.json({ success: true, username: username });
         } else {
-            res.json({ success: false, message: "로그인 실패" });
+            res.json({ success: false, message: "아이디 또는 비밀번호가 일치하지 않습니다." });
         }
     });
 });

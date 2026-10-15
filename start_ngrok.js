@@ -1,9 +1,11 @@
+require('dotenv').config();
 const ngrok = require('ngrok');
 
 (async function() {
   try {
-    const url = await ngrok.connect(3000);
-    console.log('✅ NGROK URL:', url);
+    const port = process.env.PORT || 3001;
+    const url = await ngrok.connect(port);
+    console.log(`✅ NGROK URL (${port}):`, url);
     // keep process alive
     setInterval(() => {}, 1000 * 60 * 60);
   } catch (err) {

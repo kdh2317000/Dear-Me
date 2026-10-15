@@ -13,7 +13,7 @@ const activeSessions = {};
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// [DB 설정] MySQL 연결 설정 (학교 실습 서버 및 클라우드 DB 호환)
+// [DB 설정] MySQL 연결 설정 (.env 환경변수 기반)
 const poolConfig = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
